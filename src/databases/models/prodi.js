@@ -17,6 +17,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         defaultValue: () => nanoid(20), // Menggunakan nanoid dengan panjang 20
         allowNull: false
+        
       },
       nama_prodi: {
         type: DataTypes.STRING(100),

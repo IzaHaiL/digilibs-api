@@ -1,5 +1,7 @@
 'use strict';
 
+const { sequelize } = require('../models');
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -16,18 +18,29 @@ module.exports = {
       user_id: {
         type: Sequelize.STRING(20),
         allowNull: false,
-        unique: true // Pastikan userId unik
       },
       title: {
         type: Sequelize.STRING(100),
         allowNull: false,
       },
-      abstact: {
+      title_eng: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+      },
+      abstract: {
+        type: Sequelize.STRING(500),
+        allowNull: false,
+      },
+      abstract_eng: {
         type: Sequelize.STRING(500),
         allowNull: false,
       },
       penulis: {
         type: Sequelize.STRING(50),
+        allowNull: false,
+      },
+      nim: {
+        type: Sequelize.STRING(50), // Perbaiki panjang STRING
         allowNull: false,
       },
       kontributor: {
@@ -50,7 +63,7 @@ module.exports = {
         type: Sequelize.STRING(50),
         allowNull: false,
       },
-      ulr_finalprojects: {
+      url_finalprojects: {
         type: Sequelize.STRING(100),
         allowNull: false,
       },
@@ -58,13 +71,28 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: false,
       },
-      is_validated: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
+      catatan: {
+        type: sequelize.STRING(500),
+        allowNull: false,
+      },
+      status: {
+        type: Sequelize.ENUM('Pending', 'Approved', 'Rejected'),
+        allowNull: false,
+        defaultValue: 'Pending' // Atur nilai default atau diizinkan null
       },
       submissionDate: {
         type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
+      },
+      aprovaldate: {
+        type: Sequelize.DATE,
         allowNull: false,
+        defaultValue: Sequelize.NOW
+      },
+      total_views: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0, // Default value for total views
       },
       createdAt: {
         allowNull: false,

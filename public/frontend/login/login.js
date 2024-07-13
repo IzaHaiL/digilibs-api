@@ -8,8 +8,8 @@ function redirectToLogin() {
   
     // Define redirection URLs based on login type
     const redirectMap = {
-      "mahasiswa": "mahasiswa.html",
-      "dosen": "dosen.html",
+      "mahasiswa": "dashboard_mahasiswa.html",
+      "dosen": "dashboard_dosen.html",
       "prodi": "prodi.html",
       "fakultas": "fakultas.html",
       "lppm": "lppm.html",

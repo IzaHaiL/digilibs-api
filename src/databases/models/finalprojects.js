@@ -18,56 +18,81 @@ module.exports = (sequelize, DataTypes) => {
       },
       user_id: {
         type: DataTypes.STRING(20),
-        allowNull: false,
-        unique: true // Pastikan userId unik
+        allowNull: true,
       },
       title: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      title_eng: {
+        type: DataTypes.STRING(255),
         allowNull: false,
       },
-      abstact: {
+      abstract: {
+        type: DataTypes.STRING(500),
+        allowNull: false,
+      },
+      abstract_eng: {
         type: DataTypes.STRING(500),
         allowNull: false,
       },
       penulis: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
+      },
+      nim: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
       },
       kontributor: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
       },
       fakultas_id: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
       },
       nama_fakultas: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
       },
       prodi_id: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
+      },
+      catatan: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
       },
       nama_prodi: {
         type: DataTypes.STRING(50),
-        allowNull: false,
+        allowNull: true,
       },
-      ulr_finalprojects: {
+      url_finalprojects: {
         type: DataTypes.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       berkas_finalprojects: {
         type: DataTypes.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       submissionDate: {
-        type: DataTypes.DATE,
-        allowNull: false,
+        type: DataTypes.NOW,
+        allowNull: true,
       },
-      is_validated: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
+      aprovaldate: {
+        type: DataTypes.NOW,
+        allowNull: true,
+      },
+      status: {
+        type: DataTypes.ENUM('Pending', 'Approved', 'Rejected'),
+        allowNull: false,
+        defaultValue: 'Pending' // Atur nilai default atau diizinkan null
+      },
+      total_views: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0, // Default value for total views
       },
       createdAt: {
         allowNull: false,

@@ -15,9 +15,12 @@ module.exports = {
       user_id: {
         type: Sequelize.STRING(20),
         allowNull: false,
-        unique: true // Pastikan userId unik
       },
       title: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+      },
+      title_eng: {
         type: Sequelize.STRING(100),
         allowNull: false,
       },
@@ -25,8 +28,16 @@ module.exports = {
         type: Sequelize.STRING(500),
         allowNull: false,
       },
+      abstract_eng: {
+        type: Sequelize.STRING(500),
+        allowNull: false,
+      },
       penulis: {
         type: Sequelize.STRING(50),
+        allowNull: false,
+      },
+      nidn: {
+        type: Sequelize.STRING(50), // Perbaiki panjang STRING
         allowNull: false,
       },
       kontributor: {
@@ -49,7 +60,7 @@ module.exports = {
         type: Sequelize.STRING(50),
         allowNull: false,
       },
-      ulr_research: {
+      url_research: {
         type: Sequelize.STRING(100),
         allowNull: false,
       },
@@ -57,13 +68,27 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: false,
       },
-      is_validated: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
+      catatan: {
+        type: sequelize.STRING(500),
+        allowNull: false,
+      },
+      status: {
+        type: Sequelize.ENUM('Pending', 'Aproved', 'Rejected'),
+        allowNull: false,
+        defaultValue: 'Pending' // Atur nilai default atau diizinkan null
       },
       submissionDate: {
         type: Sequelize.DATE,
         allowNull: false,
+      },
+      aprovaldate: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
+      total_views: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0, // Default value for total views
       },
       createdAt: {
         allowNull: false,

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hamburger Menu Sidebar with Centered Fixed Content and Footer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden; /* Prevent horizontal scroll */
+        min-height: 100vh; /* Ensure body takes up at least the full height of viewport */
+        display: flex;
+        flex-direction: column;
+        background-color: #f5f5fa; /* Changed background color */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Add shadow */
+    }
+
+    #main-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: 1; /* Ensure main content takes up remaining vertical space */
+        margin-top: 60px; /* Adjust based on navbar height */
+        padding: 0 20px; /* Add padding for spacing around content */
+        align-items: flex-start
+    }
+    .dashboard-1 {
+        width: 632px; /* Fixed width for Dashboard 1 */
+        max-width: 100%; /* Ensure it doesn't exceed the viewport width */
+        background-color: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 17px;
+        border-top: 5px solid red; /* Red top border */
+        overflow-x: auto; /* Add overflow-x for responsive tables */
+        margin-bottom: 17px; /* Margin bottom between dashboards */
+    }
+    
+    .dashboard-2 {
+        padding: 17px;
+        width: 632px; /* Lebar fixed untuk Dashboard 2 */
+        max-width: 1000px;
+        background-color: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-top: 5px solid red; /* Red top border */
+        overflow-x: auto; /* Add overflow-x for responsive tables */
+        margin-left: 16px;
+    }
+
+    .dashboard-title {
+        text-align: left;
+        margin-top: 20px; /* Adjust top margin */
+        margin-bottom: 20px;
+        border-bottom: 2px solid red; /* Red bottom border */
+        padding-bottom: 10px;
+        color: #d92f2f;
+    }
+
+    .profile-picture {
+        display: flex;
+        justify-content: center; /* Mengatur agar gambar berada di tengah horizontal */
+        align-items: center; /* Mengatur agar gambar berada di tengah vertical */
+        width: 100%; /* Mengambil lebar maksimum dari parent */
+        margin-bottom: 48px; /* Jarak dari gambar profil ke batas bawah konten */
+    }
+    
+    .profile-picture img {
+        width: 323px; /* Panjang gambar profil */
+        height: 323px; /* Tinggi gambar profil */
+        border-radius: 50%; /* Membuat gambar menjadi lingkaran */
+        object-fit: cover; /* Menyesuaikan gambar agar tidak terdistorsi */
+    }
+    
+    
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    label {
+        margin-bottom: 8px;
+    }
+
+    input, textarea {
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    input[type="submit"] {
+        background-color: #6e2020; /* Blue submit button */
+        color: #fff; /* White text */
+        border: none;
+        cursor: pointer;
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #a50101; /* Darker blue on hover */
+    }
+    .content-centered {
+        margin: 0 auto; /* Center the content */
+        max-width: 1000px; /* Optional: Set maximum width of centered content */
+    }
+    /* Optional: Add padding to the main content */
+    @media only screen and (max-width: 768px) {
+        .navbar {
+            padding: 8px 12px; /* Mengurangi padding pada navbar untuk ruang yang lebih sempit */
+        }
+        .sidebar {
+            width: 250px; /* Lebarkan sidebar pada mode responsif */
+        }
+        .sidebar a {
+            padding: 10px; /* Sesuaikan padding untuk ukuran layar yang lebih kecil */
+            font-size: 16px; /* Kurangi ukuran font pada sidebar untuk ruang yang lebih kecil */
+        }
+        .openbtn {
+            padding: 8px 12px; /* Sesuaikan padding pada tombol hamburger */
+        }
+        #main-wrapper {
+            margin-top: 0; /* Atur ulang margin atas pada wrapper utama */
+        }
+        .profile-dropdown {
+            margin-left: 0; /* Atur ulang margin untuk dropdown profil pada layar kecil */
+            margin-right: 20px; /* Tambahkan margin kanan untuk tetap terpisah dari elemen lain */
+        }
+        .search-container {
+            margin-right: 8px; /* Sesuaikan margin kanan untuk search container */
+        }
+        .pagination {
+            margin-top: 15px; /* Sesuaikan margin atas untuk pagination */
+            text-align: center; /* Pusatkan tautan pagination pada layar kecil */
+        }
+        #main {
+            width: 90%; /* Atur lebar konten utama untuk layar kecil */
+            margin: 10px auto; /* Center konten utama */
+            padding: 15px; /* Sesuaikan padding pada konten utama */
+        }
+        table {
+            width: 100%; /* Lebarkan tabel agar sesuai dengan konten utama */
+            /* Hilangkan properti white-space: nowrap; yang menghalangi pembungkusan teks */
+        }
+    }
+    /* Navbar styling */
+    .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background-color: white;
+        z-index: 1000;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 10px 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .logo {
+        flex: 0 0 auto;
+    }
+    
+    .logo img {
+        height: 40px;
+    }
+    
+    .spacer {
+        flex: 1; /* Membuat spasi dinamis di antara logo dan center-content */
+    }
+    
+    .center-content {
+        flex: 0 0 auto; /* Tidak memperluas center-content, agar tetap di tengah */
+        text-align: center;
+        font-weight: bold;
+
+    }
+    
+    .profile-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .profile-dropdown button {
+        background: red; /* Warna latar belakang merah pada tombol */
+        color: white; /* Warna teks putih */
+
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        color: inherit;
+        padding: 8px 16px; /* Optional: Sesuaikan padding */
+        border-radius: 4px; /* Optional: Agar tombol terlihat lebih berbentuk */
+    }
+        /* Navbar styling */
+        /*  .profile-dropdown button .dropdown-arrow {
+        display: inline-block;
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid rgb(110, 110, 110);
+        margin-left: 5px;
+    } 
+    
+    .profile-dropdown button:hover .dropdown-arrow {
+        border-top-color: black; 
+    }
+    
+    .profile-dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        top: 100%;
+        right: 0;
+        padding: 10px;
+    }
+    
+    .profile-dropdown-content a {
+        display: block;
+        padding: 8px 16px;
+        text-decoration: none;
+        color: #333;
+    }
+    
+    .profile-dropdown-content a:hover {
+        background-color: #ddd;
+    }
+    
+    .profile-dropdown:hover .profile-dropdown-content {
+        display: block;
+    }
+   */
+    /* Sidebar styling */
+    .sidebar {
+        height: 100%;
+        width: 0;
+        position: fixed;
+        z-index: 999; /* Ensure sidebar is below navbar */
+        top: 60px; /* Adjust based on navbar height */
+        left: 0;
+        background-color: #d92f2f; /* Changed sidebar color */
+        overflow-x: hidden;
+        transition: 0.5s;
+        padding-top: 20px; /* Adjust padding to suit design */
+    }
+    .sidebar a {
+        color: white; /* Changed text color to white */
+        padding: 10px 15px;
+        text-decoration: none;
+        font-size: 20px;
+        display: flex;
+        align-items: center; /* Align icon and text vertically */
+        transition: 0.3s;
+    }
+    .sidebar a i {
+        margin-right: 10px; /* Added margin between icon and text */
+    }
+    .sidebar a:hover {
+        color: #f1f1f1;
+    }
+    .sidebar .closebtn {
+        position: absolute;
+        top: 0;
+        right: 25px;
+        font-size: 36px;
+        margin-left: 50px;
+    }
+    .openbtn {
+        font-size: 20px;
+        cursor: pointer;
+        background-color: #7f8c8d; /* Changed hamburger button color */
+        color: white;
+        padding: 10px 15px;
+        border: none;
+    }
+    .openbtn:hover {
+        background-color: #555;
+    }
+    /* Footer styling */
+    footer {
+        background-color: #a00; /* Changed footer color */
+        color: white;
+        text-align: center;
+        padding: 10px 0;
+        box-shadow: 0 -2px 4px rgba(0,0,0,0.1); /* Add shadow */
+        margin-top: 73px;
+    }
+    footer img {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+    /* Table styling */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: none; /* Removed border from td elements */
+
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f4f8; /* Changed table header background color */
+    }
+    /* Add hover effect to table rows */
+    .search-container {
+        float: right;
+        margin-bottom: 10px;
+        border: 1px solid #ddd; /* Add border around search container */
+        border-radius: 5px; /* Optional: Add border radius */
+        padding: 5px; /* Add padding inside the search container */
+    }
+    .search-container input[type=text] {
+        padding: 6px;
+        margin-top: 8px;
+        font-size: 17px;
+        border: none;
+        width: 200px; /* Adjust width as needed */
+        outline: none; /* Remove default outline */
+    }
+    .search-container button {
+        float: right;
+        padding: 6px 10px;
+        margin-top: 8px;
+        margin-right: 16px;
+        background: #ddd;
+        font-size: 17px;
+        border: none;
+        cursor: pointer;
+    }
+    /* Add hover effect to buttons */
+    .pagination {
+        text-align: right;
+        margin-top: 10px;
+        margin-right: 0; /* Align to right */
+        float: right;
+    }
+    .pagination button {
+        margin: 0 5px;
+        padding: 8px 16px;
+        background-color: #0F62FE; /* Change button background color */
+        color: white; /* Change text color */
+        border: none;
+        cursor: pointer;
+    }
+    .pagination button:hover {
+        background-color: #3F8BFC; /* Change button background color on hover */
+    }
+</style>
+</head>
+<body>
+    !-- NAVBAR --!
+    <div class="navbar">
+        <div class="logo">
+            <img src="https://cdn.discordapp.com/attachments/731292697964576833/1257535244966563913/png-transparent-telkom-university-international-office-telkom-education-foundation-private-university-university-miscellaneous-angle-text-thumbnail.png?ex=66856b36&is=668419b6&hm=3a96912bdf5a28f16944d7dae1af5a1d47757fc568229a8205a0cce4bb6d0c17&" alt="Telkom University Logo">
+        </div>
+        <div class="center-content">
+            Input Berkas
+        </div>
+        <div class="profile-dropdown">
+            <button onclick=" window.location.href='login.html' , toggleProfileDropdown() ">
+                Masuk
+                <i class="dropdown-arrow"></i>
+            </button>
+            <!-- <div id="profile-dropdown" class="profile-dropdown-content">
+                <a href="#">Halaman Utama</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div> -->
+        </div>
+    </div>
+    
+    
+!-- Sidebar --!
+
+<!-- <div id="mySidebar" class="sidebar">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <a href="dashboard_mahasiswa.html"><i class="fas fa-home"></i> Home</a>
+    <a href="dashboard_mahasiswa_profile.html"><i class="fas fa-user"></i> About</a>
+    <a href="dashboard_mahasiswa_inputberkas.html"><i class="fas fa-envelope"></i> Contact</a>
+</div> -->
+
+!-- Main content --!
+
+<div id="main-wrapper">
+    <div class="dashboard-1">
+        <h1 class="dashboard-title">Tugas Akhir</h1>
+        <div class="content" style="max-width: 552px;">
+            <ul class="dashboard-list" id="tugasAkhirList">
+                <!-- List akan diisi dengan judul-judul dari database -->
+            </ul>
+        </div>
+    </div>
+    
+    <div class="dashboard-2">
+        <h1 class="dashboard-title">Penelitian</h1>
+        <div class="content" style="max-width: 552px;">
+            <ul class="dashboard-list" id="penelitianList">
+                <!-- List akan diisi dengan judul-judul dari database -->
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<footer>
+    <img src="https://cdn.discordapp.com/attachments/731292697964576833/1257535244966563913/png-transparent-telkom-university-international-office-telkom-education-foundation-private-university-university-miscellaneous-angle-text-thumbnail.png?ex=66856b36&is=668419b6&hm=3a96912bdf5a28f16944d7dae1af5a1d47757fc568229a8205a0cce4bb6d0c17&" alt="Telkom University Logo">
+    Telkom University
+</footer>
+
+<script>
+
+    function openNav() {
+        document.getElementById("mySidebar").style.width = "250px";
+        document.getElementById("main").style.marginLeft = "250px";
+    }
+    
+    function closeNav() {
+        document.getElementById("mySidebar").style.width = "0";
+        document.getElementById("main").style.marginLeft= "0";
+    }
+    
+ //   function toggleProfileDropdown() {
+  //      var dropdown = document.getElementById("arrow");
+   //     dropdown.classList.toggle("show");
+   // }
+    async function logout() {
+        try {
+            const jwt = getJwtFromCookies(); // Mendapatkan JWT dari cookie
+            const response = await fetch('http://localhost:3000/users/signout', {
+                method: 'POST', // Menggunakan metode POST untuk logout
+                headers: {
+                    'Authorization': `Bearer ${jwt}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({}) // Mengirim body kosong jika tidak ada data yang diperlukan
+            });
+            if (response.ok) {
+                // Handle logout success
+                console.log('Logout success');
+                // Hapus cookie JWT setelah logout
+                document.cookie = 'jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                // Redirect ke halaman login atau halaman lainnya
+                window.location.href = 'login.html'; // Ganti dengan halaman login kamu
+            } else {
+                // Handle logout failure
+                console.error('Logout failed');
+            }
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            // Fetch data for Tugas Akhir
+            const tugasAkhirResponse = await fetch('http://localhost:3000/finalprojects');
+    
+            if (!tugasAkhirResponse.ok) {
+                throw new Error('Failed to fetch Tugas Akhir data.');
+            }
+    
+            const tugasAkhirData = await tugasAkhirResponse.json();
+    
+            // Assuming tugasAkhirData has a property 'data' which is an array
+            const tugasAkhirList = document.getElementById('tugasAkhirList');
+    
+            tugasAkhirData.data.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item.title; // Adjust this based on your API response structure
+                tugasAkhirList.appendChild(li);
+            });
+    
+            // Fetch data for Penelitian
+            const penelitianResponse = await fetch('http://localhost:3000/researchs');
+    
+            if (!penelitianResponse.ok) {
+                throw new Error('Failed to fetch Penelitian data.');
+            }
+    
+            const penelitianData = await penelitianResponse.json();
+    
+            // Assuming penelitianData has a property 'data' which is an array
+            const penelitianList = document.getElementById('penelitianList');
+    
+            penelitianData.data.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item.title; // Adjust this based on your API response structure
+                penelitianList.appendChild(li);
+            });
+    
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            alert('Failed to fetch data. Please try again.');
+        }
+    });
+
+    function getJwtFromCookies() {
+        const cookieName = 'jwt'; 
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === cookieName) {
+                return value;
+            }
+        }
+        return null;
+    }
+    
+    // Fungsi untuk mengambil data dari API
+    async function fetchData(jwt) {
+        try {
+            const response = await fetch('http://localhost:3000/users/detail/', {
+                headers: {
+                    'Authorization': `Bearer ${jwt}`
+                }
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            throw Error('Gagal mengambil data dari API');
+        }
+    }
+    
+
+
+</script>
+
+</body>
+</html>

@@ -47,6 +47,22 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATEONLY, // Gunakan DATEONLY untuk tanggal lahir
         allowNull: true,
       },
+      fakultas_id: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      nama_fakultas: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      prodi_id: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      nama_prodi: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
       jenis_kelamin: { 
         type: DataTypes.ENUM('Laki-laki', 'Perempuan'),
         allowNull: false,
@@ -54,6 +70,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       url_foto: {
         type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      nomor_hp: { 
+        type: DataTypes.STRING(20),
         allowNull: true,
       },
       createdAt: {

@@ -13,15 +13,18 @@ module.exports = (sequelize, DataTypes) => {
       research_id: {
         type: DataTypes.STRING(20),
         primaryKey: true,
-        defaultValue: () => nanoid(20), // Menggunakan nanoid dengan panjang 20
+        defaultValue: () => nanoid(20), 
         allowNull: false
       },
       user_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
-        unique: true // Pastikan userId unik
       },
       title: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
+      title_eng: {
         type: DataTypes.STRING(100),
         allowNull: false,
       },
@@ -29,9 +32,21 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(500),
         allowNull: false,
       },
+      abstract_eng: {
+        type: DataTypes.STRING(500),
+        allowNull: false,
+      },
+      catatan: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+      },
       penulis: {
         type: DataTypes.STRING(50),
         allowNull: false,
+      },
+      nidn: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
       },
       kontributor: {
         type: DataTypes.STRING(50),
@@ -53,21 +68,31 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
-      ulr_research: {
+      url_research: {
         type: DataTypes.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       berkas_research: {
         type: DataTypes.STRING(100),
-        allowNull: false,
-      },
-      submissionDate: {
-        type: DataTypes.DATE,
         allowNull: true,
       },
-      is_validated: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
+      submissionDate: {
+        type: DataTypes.NOW,
+        allowNull: true,
+      },
+      aprovaldate: {
+        type: DataTypes.NOW,
+        allowNull: true,
+      },
+      status: {
+        type: DataTypes.ENUM('Pending', 'Aproved', 'Rejected'),
+        allowNull: false,
+        defaultValue: 'Pending' // Atur nilai default atau diizinkan null
+      },
+      total_views: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0, // Default value for total views
       },
       createdAt: {
         allowNull: false,

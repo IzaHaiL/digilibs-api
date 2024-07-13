@@ -5,7 +5,6 @@ const { nanoid } = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
-      // define association here
     }
   }
   User.init(
@@ -13,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
       user_id: {
         type: DataTypes.STRING,
         primaryKey: true,
-        defaultValue: () => nanoid(20), // Menggunakan nanoid dengan panjang 20
+        defaultValue: () => nanoid(20), 
         allowNull: false
       },
       username: {

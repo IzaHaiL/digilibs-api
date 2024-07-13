@@ -15,7 +15,7 @@ const authData = {
 function generateAccessToken(user) {
   return jwt.sign(
     {
-      userId: user.user_id,  // corrected to user.user_id
+      user_id: user.user_id,  // corrected to user.user_id
       username: user.username,
       email: user.email,
       role: user.role,
@@ -31,7 +31,7 @@ function generateAccessToken(user) {
 function generateRefreshToken(user) {
   return jwt.sign(
     {
-      userId: user.user_id,  // corrected to user.user_id
+      user_id: user.user_id,  // corrected to user.user_id
       username: user.username,
       email: user.email,
       role: user.role,
@@ -159,7 +159,7 @@ function isDosen(req, res, next) {
 // Middleware to check if the user is the owner of the requested resource or an admin
 function isUserOwner(req, res, next) {
   const requestedUserId = req.params.id;
-  const authenticatedUserId = req.user.userId;
+  const authenticatedUserId = req.user.user_id;
   if (req.user.role === "admin" || requestedUserId === authenticatedUserId) {
     next();
   } else {
@@ -170,7 +170,7 @@ function isUserOwner(req, res, next) {
 }
 
 function isUserOwnerNoRequest(req, res, next) {
-  const authenticatedUserId = req.user.userId;
+  const authenticatedUserId = req.user.user_id;
   console.log("Authenticated User ID:", authenticatedUserId);
   if (req.user.role === "admin" || authenticatedUserId) {
     next();
@@ -183,7 +183,7 @@ function isUserOwnerNoRequest(req, res, next) {
 
 async function isDonationOwner(req, res, next) {
   const requestedDonationId = req.params.id;
-  const authenticatedUserId = req.user.userId;
+  const authenticatedUserId = req.user.user_id;
 
   try {
     const donationObj = await donation.findByPk(requestedDonationId);

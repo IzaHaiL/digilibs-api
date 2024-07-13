@@ -26,6 +26,10 @@ module.exports = {
         type: Sequelize.STRING(50), // Perbaiki panjang STRING
         allowNull: false,
       },
+      nik: {
+        type: Sequelize.STRING(20),
+        allowNull: true,
+      },
       alamat: {
         type: Sequelize.STRING(255), // Perbaiki panjang STRING
         allowNull: false,

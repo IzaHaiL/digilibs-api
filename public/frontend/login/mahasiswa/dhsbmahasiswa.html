@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hamburger Menu Sidebar with Centered Fixed Content and Footer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<link rel="stylesheet" href="dhsbmahasiswa.css">
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="#" onclick="openNav()">☰</a>
+        <div class="profile-dropdown">
+            <button onclick="toggleProfileDropdown()">
+                <span class="profile-name">John Doe</span>
+                <img class="profile-img" src="https://cdn.discordapp.com/attachments/731292697964576833/1257535244966563913/png-transparent-telkom-university-international-office-telkom-education-foundation-private-university-university-miscellaneous-angle-text-thumbnail.png?ex=66856b36&is=668419b6&hm=3a96912bdf5a28f16944d7dae1af5a1d47757fc568229a8205a0cce4bb6d0c17&" alt="Profile Picture">
+                <i class="dropdown-arrow"></i>
+            </button>
+            <div id="profile-dropdown" class="profile-dropdown-content">
+                <a href="#">Halaman Utama</a>
+                <a href="#">Logout</a>
+            </div>
+        </div>
+    </div>
+    
+        
+    </div>
+    
+
+<div id="mySidebar" class="sidebar">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <a href="#"><i class="fas fa-home"></i> Home</a>
+    <a href="#"><i class="fas fa-user"></i> About</a>
+    <a href="#"><i class="fas fa-envelope"></i> Contact</a>
+</div>
+
+<div id="main-wrapper">
+    <div id="main">
+        <h1 class="dashboard-title">Dashboard</h1>
+        
+        <div class="search-container">
+            <input type="text" placeholder="Search...">
+            <button type="submit"><i class="fa fa-search"></i></button>
+        </div>
+        
+        <div class="content-centered">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>NIM</th>
+                        <th>Penulis</th>
+                        <th>Judul Tugas Akhir</th>
+                        <th>Dosen Pembimbing</th>
+                        <th>Program Studi</th>
+                        <th>Fakultas</th>
+                        <th>Tanggal Upload</th>
+                        <th>Tanggal Approval</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>123456</td>
+                        <td>John Doe</td>
+                        <td>Sample Thesis Title</td>
+                        <td>Dr. Jane Smith</td>
+                        <td>Computer Science</td>
+                        <td>Faculty of Engineering</td>
+                        <td>01-01-2024</td>
+                        <td>15-01-2024</td>
+                        <td>Approved</td>
+                        <td><button>View</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="pagination">
+            <button>&lt; Previous</button>
+            <button>Next &gt;</button>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <img src="https://cdn.discordapp.com/attachments/731292697964576833/1257535244966563913/png-transparent-telkom-university-international-office-telkom-education-foundation-private-university-university-miscellaneous-angle-text-thumbnail.png?ex=66856b36&is=668419b6&hm=3a96912bdf5a28f16944d7dae1af5a1d47757fc568229a8205a0cce4bb6d0c17&" alt="Telkom University Logo">
+    Telkom University
+</footer>
+<script src="dhsbmahasiswa.js"></script>

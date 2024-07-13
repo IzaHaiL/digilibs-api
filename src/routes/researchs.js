@@ -10,24 +10,33 @@ const {
     isProdi,
     isFakultas,
     isDosen,
+    isUserOwner,
     isMahasiswa,
   } = require("../middlewares/auth");
 
 // Create a new research
-router.post('/create' ,authenticateToken, isMahasiswa, researchController.createResearch);
+router.post('/private/create', authenticateToken , checkBlacklist, isDosen, researchController.createResearch);
 
-// Get all research
-router.get('/', researchController.getAllResearch);
+router.get('/private/', researchController.getAllResearch);
 
-// Get a single research by ID
-router.get('/:id', researchController.getResearchById);
+router.get('/private/detail/:id', authenticateToken , checkBlacklist, researchController.getResearchById);
 
-// Update a research by ID
-router.put('/update/:id', researchController.updateResearch);
+router.get('/private/user/all', authenticateToken , checkBlacklist, isDosen, isUserOwner, researchController.getAllResearchByUserId);
 
-// Delete a research by ID
-router.delete('/delete/:id', researchController.deleteResearch);
+router.get('/public/', researchController.getAllResearchPublic);
 
-router.put('/validated/:id', researchController.validatedResearch);
+router.delete('/private/:id', authenticateToken , checkBlacklist, isUserOwner, isMahasiswa, researchController.deleteResearch);
+
+router.put('/private/update/:id',authenticateToken, researchController.updateResearch);
+
+router.put('/private/validated/:id',authenticateToken, researchController.updateResearch);
+router.get('/private/fakultas/count/', researchController.getAllFakultasTotalCount);
+
+router.get('/private/status/count/', researchController.getAllResearchStatusCount);
+
+router.put('/private/update/status/:id',authenticateToken, researchController.updateStatusProject );
+
+
+
 
 module.exports = router;

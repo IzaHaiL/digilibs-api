@@ -11,17 +11,15 @@ module.exports = (sequelize, DataTypes) => {
   Fakultas.init(
     {
       user_id: {
-        type: DataTypes.STRING(20),
-        primaryKey: true,
-        defaultValue: () => nanoid(20), // Using nanoid with length 20
-        allowNull: false,
-        unique: true,
+        type: DataTypes.STRING(20), // Sesuaikan dengan tipe data yang Anda gunakan untuk userId
+        allowNull: false
       },
       fakultas_id: {
         type: DataTypes.STRING(20),
-        allowNull: false,
-        unique: true,
-        defaultValue: () => nanoid(20), // Using nanoid with length 20
+        primaryKey: true,
+        defaultValue: () => nanoid(20), // Menggunakan nanoid dengan panjang 20
+        allowNull: false
+        
       },
       nama_fakultas: {
         type: DataTypes.STRING(50),
