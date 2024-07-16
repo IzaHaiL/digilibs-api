@@ -5,7 +5,12 @@ const { nanoid } = require('nanoid');
 module.exports = (sequelize, DataTypes) => {
   class Research extends Model {
     static associate(models) {
-      // define associations here
+      // Define associations here
+      Research.belongsTo(models.user, { foreignKey: 'user_id' });
+      Research.belongsTo(models.fakultas, { foreignKey: 'fakultas_id' });
+      Research.belongsTo(models.prodis, { foreignKey: 'prodi_id' });
+      Research.belongsTo(models.dosens, { foreignKey: 'dosen_id' });
+
     }
   }
   Research.init(
@@ -13,10 +18,14 @@ module.exports = (sequelize, DataTypes) => {
       research_id: {
         type: DataTypes.STRING(20),
         primaryKey: true,
-        defaultValue: () => nanoid(20), 
-        allowNull: false
+        defaultValue: () => nanoid(20),
+        allowNull: false,
       },
       user_id: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+      },
+      dosen_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
       },
@@ -36,35 +45,15 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(500),
         allowNull: false,
       },
+      kategori: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
       catatan: {
         type: DataTypes.STRING(500),
         allowNull: true,
       },
-      penulis: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-      },
-      nidn: {
-        type: DataTypes.STRING(20),
-        allowNull: true,
-      },
       kontributor: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-      },
-      fakultas_id: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-      },
-      nama_fakultas: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-      },
-      prodi_id: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-      },
-      nama_prodi: {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
@@ -77,22 +66,30 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       submissionDate: {
-        type: DataTypes.NOW,
+        type: DataTypes.DATE,
         allowNull: true,
       },
-      aprovaldate: {
-        type: DataTypes.NOW,
+      approvaldate: {
+        type: DataTypes.DATE,
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM('Pending', 'Aproved', 'Rejected'),
+        type: DataTypes.ENUM('Pending', 'Approved', 'Rejected'),
         allowNull: false,
-        defaultValue: 'Pending' // Atur nilai default atau diizinkan null
+        defaultValue: 'Pending',
       },
       total_views: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 0, // Default value for total views
+        defaultValue: 0,
+      },
+      fakultas_id: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
+      },
+      prodi_id: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
       },
       createdAt: {
         allowNull: false,
@@ -107,7 +104,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: 'research'
+      modelName: 'research',
     }
   );
   return Research;

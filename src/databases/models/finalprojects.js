@@ -5,18 +5,27 @@ const { nanoid } = require('nanoid');
 module.exports = (sequelize, DataTypes) => {
   class FinalProjects extends Model {
     static associate(models) {
-      // Define associations here if needed
+      // Define associations here
+      FinalProjects.belongsTo(models.user, { foreignKey: 'user_id' });
+      FinalProjects.belongsTo(models.mahasiswas, { foreignKey: 'mahasiswa_id' });
+      FinalProjects.belongsTo(models.fakultas, { foreignKey: 'fakultas_id' });
+      FinalProjects.belongsTo(models.prodis, { foreignKey: 'prodi_id' });
     }
   }
+  
   FinalProjects.init(
     {
       project_id: {
         type: DataTypes.STRING(20),
         primaryKey: true,
-        defaultValue: () => nanoid(20), // Using nanoid with length 20
+        defaultValue: () => nanoid(20),
         allowNull: false,
       },
       user_id: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+      mahasiswa_id: {
         type: DataTypes.STRING(20),
         allowNull: true,
       },
@@ -36,36 +45,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(500),
         allowNull: false,
       },
-      penulis: {
+      kategori: {
         type: DataTypes.STRING(50),
-        allowNull: true,
-      },
-      nim: {
-        type: DataTypes.STRING(20),
         allowNull: true,
       },
       kontributor: {
         type: DataTypes.STRING(50),
         allowNull: true,
       },
-      fakultas_id: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-      },
-      nama_fakultas: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-      },
-      prodi_id: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-      },
       catatan: {
         type: DataTypes.STRING(500),
-        allowNull: true,
-      },
-      nama_prodi: {
-        type: DataTypes.STRING(50),
         allowNull: true,
       },
       url_finalprojects: {
@@ -77,22 +66,31 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       submissionDate: {
-        type: DataTypes.NOW,
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
         allowNull: true,
       },
-      aprovaldate: {
-        type: DataTypes.NOW,
+      approvalDate: { // Changed from 'aprovaldate' to 'approvalDate'
+        type: DataTypes.DATE,
         allowNull: true,
       },
       status: {
         type: DataTypes.ENUM('Pending', 'Approved', 'Rejected'),
         allowNull: false,
-        defaultValue: 'Pending' // Atur nilai default atau diizinkan null
+        defaultValue: 'Pending',
       },
       total_views: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 0, // Default value for total views
+        defaultValue: 0,
+      },
+      fakultas_id: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      prodi_id: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
       },
       createdAt: {
         allowNull: false,

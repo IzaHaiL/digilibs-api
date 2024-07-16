@@ -1,52 +1,94 @@
-const express = require('express');
-const router = express.Router();
-const finalProjectController = require('../controllers/finalprojectController');
+const express = require('express')
+const router = express.Router()
+const finalProjectController = require('../controllers/finalprojectController')
 const {
-    authenticateToken,
-    authenticateRefreshToken,
-    checkBlacklist,
-    checkUserDeletedBeforeLogin,
-    isAdmin,
-    isProdi,
-    isFakultas,
-    isUserOwner,
-    isMahasiswa,
-  } = require("../middlewares/auth");
+  authenticateToken,
+  authenticateRefreshToken,
+  checkBlacklist,
+  checkUserDeletedBeforeLogin,
+  isAdmin,
+  isProdi,
+  isFakultas,
+  isUserOwner,
+  isMahasiswa
+} = require('../middlewares/auth')
 
-// Create a new final project
-router.post('/private/create', authenticateToken , checkBlacklist, isMahasiswa, finalProjectController.createFinalProjects);
+// private
 
-router.get('/private/', finalProjectController.getAllFinalProjects);
+router.post(
+  '/private/create',
+  authenticateToken,
+  checkBlacklist,
+  isMahasiswa,
+  finalProjectController.createFinalProjects
+)
 
-router.get('/private/user/detail/:id', authenticateToken , checkBlacklist, finalProjectController.getFinalProjectsById);
+router.get('/private/', finalProjectController.getAllFinalProjects)
 
-router.get('/private/user/all', authenticateToken , checkBlacklist, isMahasiswa, finalProjectController.getAllFinalProjectsByUserId);
+router.get(
+  '/private/detail/id/:id',
+  authenticateToken,
+  finalProjectController.getFinalProjectsById
+)
 
-router.get('/public/detail/:id', finalProjectController.getDetailProjectsPublicById);
+router.get(
+  '/private/user/all',
+  authenticateToken,
+  checkBlacklist,
+  isMahasiswa,
+  finalProjectController.getAllFinalProjectsByUserId
+)
 
-router.get('/public/', finalProjectController.getAllFinalProjectsPublic);
+router.delete(
+  '/private/delete/:id',
+  authenticateToken,
+  checkBlacklist,
+  isMahasiswa,
+  finalProjectController.deleteFinalProjects
+)
 
-router.get('/public/search', finalProjectController.searchProjectPublic);
+router.put(
+  '/private/update/:project_id',
+  authenticateToken,
+  isMahasiswa,
+  finalProjectController.updateFinalProjects
+)
 
-router.get('/public/search/advanced', finalProjectController.advancedSearchProjectsPublic);
+router.get(
+  '/private/fakultas/count/',
+  finalProjectController.getAllFakultasTotalCount
+)
 
-router.get('/public/same-title/', finalProjectController.getAllSameProjectPublic);
+router.get(
+  '/private/status/count/',
+  finalProjectController.getAllFinalProjectsStatusCount
+)
 
-router.delete('/private/:id', authenticateToken , checkBlacklist,isMahasiswa, finalProjectController.deleteFinalProjects);
+router.put(
+  '/private/update/status/:id',
+  authenticateToken,
+  finalProjectController.updateStatusProject
+)
 
-router.put('/private/update/:id',authenticateToken, finalProjectController.updateFinalProjects);
+//public
 
-router.get('/private/fakultas/count/', finalProjectController.getAllFakultasTotalCount);
-router.get('/private/status/count/', finalProjectController.getAllFinalProjectsStatusCount);
+router.get(
+  '/public/detail/:id',
+  finalProjectController.getDetailProjectsPublicById
+)
 
-router.put('/private/update/status/:id', authenticateToken, finalProjectController.updateStatusProject );
+router.get('/public/', finalProjectController.getAllFinalProjectsPublic)
 
+router.get('/public/search', finalProjectController.searchProjectPublic)
 
+router.get(
+  '/public/search/advanced',
+  finalProjectController.advancedSearchProjectsPublic
+)
 
+router.get(
+  '/public/same-title/',
+  finalProjectController.getAllSameProjectPublic
+)
 
-
-
-
-
-
-module.exports = router;
+module.exports = router

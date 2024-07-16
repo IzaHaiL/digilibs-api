@@ -5,28 +5,27 @@ const { nanoid } = require('nanoid');
 module.exports = (sequelize, DataTypes) => {
   class Fakultas extends Model {
     static associate(models) {
-      // Define associations here if needed
+      Fakultas.belongsTo(models.user, { foreignKey: 'user_id' });
+      Fakultas.hasMany(models.prodis, { foreignKey: 'fakultas_id' });
+      Fakultas.hasMany(models.mahasiswas, { foreignKey: 'fakultas_id' });
+      Fakultas.hasMany(models.dosens, { foreignKey: 'fakultas_id' });
     }
   }
+
   Fakultas.init(
     {
-      user_id: {
-        type: DataTypes.STRING(20), // Sesuaikan dengan tipe data yang Anda gunakan untuk userId
-        allowNull: false
-      },
       fakultas_id: {
         type: DataTypes.STRING(20),
         primaryKey: true,
         defaultValue: () => nanoid(20), // Menggunakan nanoid dengan panjang 20
         allowNull: false
-        
+      },
+      user_id: {
+        type: DataTypes.STRING(20),
+        allowNull: false
       },
       nama_fakultas: {
         type: DataTypes.STRING(50),
-        allowNull: false,
-      },
-      kode: {
-        type: DataTypes.STRING(10),
         allowNull: false,
       },
       createdAt: {
@@ -45,5 +44,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: 'fakultas',
     }
   );
+
   return Fakultas;
 };

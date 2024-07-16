@@ -15,7 +15,7 @@ const authData = {
 function generateAccessToken(user) {
   return jwt.sign(
     {
-      user_id: user.user_id,  // corrected to user.user_id
+      user_id: user.user_id, // corrected to user.user_id
       username: user.username,
       email: user.email,
       role: user.role,
@@ -31,7 +31,7 @@ function generateAccessToken(user) {
 function generateRefreshToken(user) {
   return jwt.sign(
     {
-      user_id: user.user_id,  // corrected to user.user_id
+      user_id: user.user_id, // corrected to user.user_id
       username: user.username,
       email: user.email,
       role: user.role,
@@ -124,7 +124,8 @@ function isFakultas(req, res, next) {
 }
 
 // Middleware to check if the user is a prodi
-function isProdi(req, res, next) {  // corrected function name
+function isProdi(req, res, next) {
+  // corrected function name
   if (req.user && req.user.role === "prodi") {
     next();
   } else {
@@ -157,14 +158,37 @@ function isDosen(req, res, next) {
 }
 
 // Middleware to check if the user is the owner of the requested resource or an admin
-function isUserOwner(req, res, next) {
-  const requestedUserId = req.params.id;
-  const authenticatedUserId = req.user.user_id;
-  if (req.user.role === "admin" || requestedUserId === authenticatedUserId) {
-    next();
-  } else {
-    res.status(403).json({
-      error: "Forbidden: You do not have permission to access this resource",
+async function isUserOwner(modelName, idColumn, req, res, next) {
+  try {
+    const entityId = req.params[idColumn];
+    const authenticatedUserId = req.user.user_id;
+
+    // Ambil model berdasarkan nama model yang diberikan
+    const Model = require(`../models/${modelName}`); // Pastikan model Anda terdapat di folder models
+
+    // Bangun kueri untuk mencari entitas berdasarkan idColumn
+    const entity = await Model.findOne({ where: { [idColumn]: entityId } });
+
+    if (!entity) {
+      return res.status(404).json({
+        error: `${modelName} not found`,
+      });
+    }
+
+    const requestedUserId = entity.user_id;
+
+    // Periksa izin
+    if (req.user.role === "admin" || requestedUserId === authenticatedUserId) {
+      next();
+    } else {
+      res.status(403).json({
+        error: "Forbidden: You do not have permission to access this resource",
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Internal Server Error",
     });
   }
 }
@@ -242,7 +266,7 @@ async function checkUserDeletedBeforeLogin(req, res, next) {
     if (!foundUser) {
       return res.status(404).json({ error: "User not found" });
     }
-    const userDeleted = await isUserDeleted(foundUser.user_id);  // corrected to foundUser.user_id
+    const userDeleted = await isUserDeleted(foundUser.user_id); // corrected to foundUser.user_id
     if (userDeleted) {
       return res
         .status(403)
@@ -280,7 +304,7 @@ module.exports = {
   isAdmin,
   isMahasiswa,
   isFakultas,
-  isProdi,  // corrected export name
+  isProdi, // corrected export name
   isLppm,
   isDosen,
   isUserOwner,

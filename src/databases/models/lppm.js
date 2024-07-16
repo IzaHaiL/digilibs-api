@@ -5,23 +5,21 @@ const { nanoid } = require('nanoid');
 module.exports = (sequelize, DataTypes) => {
   class LPPM extends Model {
     static associate(models) {
-      // Define associations here if needed
+      LPPM.belongsTo(models.user, { foreignKey: 'user_id' });
     }
   }
+  
   LPPM.init(
     {
-      user_id: {
+      lppm_id: {
         type: DataTypes.STRING(20),
         primaryKey: true,
-        defaultValue: () => nanoid(20), // Using nanoid with length 20
-        allowNull: false,
-        unique: true,
+        defaultValue: () => nanoid(20), // Menggunakan nanoid dengan panjang 20
+        allowNull: false
       },
-      lppm_id: {
-        type: DataTypes.INTEGER(20),
-        allowNull: false,
-        unique: true,
-        defaultValue: () => nanoid(20), // Using nanoid with length 20
+      user_id: {
+        type: DataTypes.STRING(20),
+        allowNull: false
       },
       nama_lppm: {
         type: DataTypes.STRING(50),
@@ -43,5 +41,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: 'lppms',
     }
   );
+  
   return LPPM;
 };

@@ -5,76 +5,72 @@ const { nanoid } = require('nanoid');
 module.exports = (sequelize, DataTypes) => {
   class Dosen extends Model {
     static associate(models) {
-      // Define associations here if needed
+      Dosen.belongsTo(models.user, { foreignKey: 'user_id' });
+      Dosen.belongsTo(models.fakultas, { foreignKey: 'fakultas_id' });
+      Dosen.belongsTo(models.prodis, { foreignKey: 'prodi_id' });
+      Dosen.hasMany(models.research, { foreignKey: 'dosen_id' });
+
     }
   }
+
   Dosen.init(
     {
-      user_id: {
+      dosen_id: {
         type: DataTypes.STRING(20),
         primaryKey: true,
-        defaultValue: () => nanoid(20), // Using nanoid with length 20
+        defaultValue: () => nanoid(20),
         allowNull: false,
         unique: true,
       },
-      dosen_id: {
+      user_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
         unique: true,
-        defaultValue: () => nanoid(20), // Using nanoid with length 20
       },
       nama_dosen: {
         type: DataTypes.STRING(50),
-        allowNull: true,
+        allowNull: false,
       },
       nik: {
         type: DataTypes.STRING(20),
-        allowNull: true,
+        allowNull: false,
       },
       nidn: {
         type: DataTypes.STRING(20),
-        allowNull: true,
+        allowNull: false,
       },
       alamat: {
-        type: DataTypes.STRING(255), // Perbaiki panjang STRING
-        allowNull: true,
+        type: DataTypes.STRING(255),
+        allowNull: false,
       },
       tempat_lahir: {
-        type: DataTypes.STRING(50), // Perbaiki panjang STRING
-        allowNull: true,
-      },
-      tanggal_lahir: { 
-        type: DataTypes.DATEONLY, // Gunakan DATEONLY untuk tanggal lahir
-        allowNull: true,
-      },
-      fakultas_id: {
         type: DataTypes.STRING(50),
         allowNull: true,
       },
-      nama_fakultas: {
-        type: DataTypes.STRING(50),
+      tanggal_lahir: {
+        type: DataTypes.DATEONLY,
         allowNull: true,
       },
-      prodi_id: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-      },
-      nama_prodi: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-      },
-      jenis_kelamin: { 
+      jenis_kelamin: {
         type: DataTypes.ENUM('Laki-laki', 'Perempuan'),
         allowNull: false,
-        defaultValue: 'Laki-laki' // Atur nilai default atau diizinkan null
+        defaultValue: 'Laki-laki',
       },
       url_foto: {
         type: DataTypes.STRING(255),
         allowNull: true,
       },
-      nomor_hp: { 
+      nomor_hp: {
         type: DataTypes.STRING(20),
         allowNull: true,
+      },
+      fakultas_id: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
+      },
+      prodi_id: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
       },
       createdAt: {
         allowNull: false,
@@ -89,8 +85,9 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: 'dosens', // Perhatikan penulisan modelName yang harus dimulai dengan huruf besar
+      modelName: 'dosens', // modelName harus dimulai dengan huruf besar
     }
   );
+
   return Dosen;
 };
