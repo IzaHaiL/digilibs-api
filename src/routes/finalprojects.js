@@ -26,7 +26,7 @@ router.post(
 router.get('/private/', finalProjectController.getAllFinalProjects)
 
 router.get(
-  '/private/detail/id/:id',
+  '/private/detail/:id',
   authenticateToken,
   finalProjectController.getFinalProjectsById
 )
@@ -90,5 +90,12 @@ router.get(
   '/public/same-title/',
   finalProjectController.getAllSameProjectPublic
 )
+
+router.get('/private/fakultas/',authenticateToken, finalProjectController.getAllFinalProjectsByFakultasName)
+router.get('/private/prodi/',authenticateToken, finalProjectController.getAllFinalProjectsByProdiName)
+router.get('/private/prodi/status/count',authenticateToken, finalProjectController.getFinalProjectStatusCountByProdi)
+router.get('/private/total',authenticateToken, finalProjectController.getAllFinalProjectsTotal)
+
+
 
 module.exports = router

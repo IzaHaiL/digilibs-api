@@ -17,7 +17,6 @@ router.post(
   '/signout',
   authenticateToken,
   authenticateRefreshToken,
-  checkBlacklist,
   userController.signOut
 )
 

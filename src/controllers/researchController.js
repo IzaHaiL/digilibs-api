@@ -71,20 +71,32 @@ async function createResearch (req, res, next) {
   }
 }
 
-async function getAllResearch (req, res, next) {
+async function getAllResearch(req, res, next) {
   try {
-    const page = parseInt(req.query.page, 10) || 1
-    const pageSize = parseInt(req.query.pageSize, 10) || 10
+    const page = parseInt(req.query.page, 10) || 1;
+    const pageSize = parseInt(req.query.pageSize, 10) || 10;
+    const year = req.query.year ? parseInt(req.query.year, 10) : null;
+
+    // Prepare conditions for where clause
+    let whereCondition = {};
+
+    if (year) {
+      whereCondition.createdAt = {
+        [Op.gte]: new Date(`${year}-01-01T00:00:00Z`),
+        [Op.lt]: new Date(`${year + 1}-01-01T00:00:00Z`),
+      };
+    }
 
     const result = await research.paginate({
       page: page,
       paginate: pageSize,
+      where: whereCondition, // Include the where condition for filtering by year
       include: [
         { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
         { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
       ]
-    })
+    });
 
     const response = {
       message: 'Success fetch research',
@@ -92,11 +104,12 @@ async function getAllResearch (req, res, next) {
       total_pages: result.pages,
       current_page: result.page,
       data: result.docs
-    }
+    };
 
-    res.send(response)
+    res.send(response);
   } catch (err) {
-    res.status(500).send(err)
+    console.error('Error fetching research:', err);
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 }
 async function getAllResearchByUserId (req, res, next) {
@@ -119,13 +132,13 @@ async function getAllResearchByUserId (req, res, next) {
 
     if (result.count === 0) {
       return res.status(404).json({
-        message: 'Final Project not found',
+        message: 'research Project not found',
         data: null
       })
     }
 
     const response = {
-      message: 'Success fetching final projects by user ID',
+      message: 'Success fetching research projects by user ID',
       total_count: result.count,
       total_pages: Math.ceil(result.count / pageSize),
       current_page: page,
@@ -136,7 +149,7 @@ async function getAllResearchByUserId (req, res, next) {
   } catch (err) {
     console.error(err)
     res.status(500).json({
-      message: 'Failed to fetch final projects',
+      message: 'Failed to fetch research projects',
       error: err.message
     })
   }
@@ -186,7 +199,7 @@ async function getResearchById (req, res, next) {
 
     if (!research) {
       res.status(404).json({
-        message: 'Final Project not found',
+        message: 'research Project not found',
         data: null
       })
     } else {
@@ -197,7 +210,7 @@ async function getResearchById (req, res, next) {
     }
   } catch (err) {
     res.status(500).json({
-      message: 'Read Final Project Failed',
+      message: 'Read research Project Failed',
       data: err.toString()
     })
   }
@@ -207,7 +220,7 @@ async function updateResearch (req, res, next) {
   try {
     const { research_id } = req.params
 
-    // Periksa apakah final project dengan project_id yang diberikan ada di database
+    // Periksa apakah research project dengan project_id yang diberikan ada di database
     const existingProject = await research.findByPk(research_id)
     if (!existingProject) {
       return res.status(404).json({
@@ -262,22 +275,22 @@ async function updateResearch (req, res, next) {
       })
     }
 
-    // Lakukan update data final project
+    // Lakukan update data research project
     await research.update(dataToUpdate, {
       where: { project_id: project_id }
     })
 
-    // Ambil data final project yang telah diupdate
+    // Ambil data research project yang telah diupdate
     const updatedProject = await research.findByPk(research_id)
 
     res.status(200).json({
-      message: 'Final Project Updated Successfully',
+      message: 'research Project Updated Successfully',
       data: updatedProject
     })
   } catch (err) {
     console.error(err)
     res.status(500).json({
-      message: 'Update Final Project Failed',
+      message: 'Update research Project Failed',
       error: err.message
     })
   }
@@ -364,7 +377,7 @@ async function getAllResearchPublic (req, res, next) {
     })
 
     const response = {
-      message: 'Success fetch final projects',
+      message: 'Success fetch research projects',
       total_count: result.count,
       total_pages: Math.ceil(result.count / pageSize),
       current_page: page,
@@ -374,7 +387,7 @@ async function getAllResearchPublic (req, res, next) {
     res.send(response)
   } catch (err) {
     res.status(500).send({
-      message: 'Fetch Final Projects Failed',
+      message: 'Fetch research Projects Failed',
       data: err.toString()
     })
   }
@@ -530,6 +543,242 @@ const updateStatusProject = async (req, res) => {
   }
 }
 
+
+async function getAllResearchByFakultasName(req, res) {
+  const user_id = req.user.user_id;
+  const role = req.user.role;
+
+  try {
+    // Check if the role is 'fakultas'
+    if (role !== 'fakultas') {
+      return res.status(403).json({ message: 'Access denied', data: null });
+    }
+
+    // Fetch user details to get fakultas_id
+    const fakultasUser = await fakultas.findOne({ where: { user_id: user_id } });
+
+    if (!fakultasUser) {
+      return res.status(404).json({ message: 'Fakultas user not found', data: null });
+    }
+
+    const fakultasId = fakultasUser.fakultas_id;
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const pageSize = parseInt(req.query.pageSize, 10) || 10;
+    const year = req.query.year ? parseInt(req.query.year) : null;
+
+    // Prepare conditions for where clause
+    let whereCondition = { fakultas_id: fakultasId };
+
+    if (year) {
+      whereCondition.createdAt = {
+        [Op.gte]: new Date(`${year}-01-01T00:00:00Z`),
+        [Op.lt]: new Date(`${year + 1}-01-01T00:00:00Z`),
+      };
+    }
+
+    // Fetch research based on fakultas_id and optional year filter
+    const { count, rows: researchs } = await research.findAndCountAll({ 
+      where: whereCondition,
+      order: [['createdAt', 'DESC']], // Optional: default sorting
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+      include: [
+        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+        { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
+        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+      ]
+    });
+
+    res.status(200).json({
+      message: `Research for Fakultas ${fakultasId} retrieved successfully`,
+      total_count: count,
+      total_pages: Math.ceil(count / pageSize),
+      current_page: page,
+      data: researchs,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+
+async function getAllResearchByProdiName(req, res) {
+  const user_id = req.user.user_id;
+  const role = req.user.role;
+
+  try {
+    // Check if the role is 'fakultas'
+    if (role !== 'prodi') {
+      return res.status(403).json({ message: 'Access denied', data: null });
+    }
+
+    // Fetch user details to get fakultas_id
+    const prodiUser = await prodis.findOne({ where: { user_id: user_id } });
+
+    if (!prodiUser) {
+      return res.status(404).json({ message: 'Fakultas user not found', data: null });
+    }
+
+    const prodiId = prodiUser.prodi_id;
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const pageSize = parseInt(req.query.pageSize, 10) || 10;
+    const year = req.query.year ? parseInt(req.query.year) : null;
+    const prodiName = req.query.prodiName ? req.query.prodiName.trim() : null;
+
+    // Prepare conditions for where clause
+    let whereCondition = { '$prodi.prodi_id$': prodiId }; // Note the use of aliasing for include model
+
+    if (prodiName) {
+      whereCondition['$prodi.nama_prodi$'] = prodiName; // Using alias to reference the included model
+    }
+
+    if (year) {
+      whereCondition.createdAt = {
+        [Op.gte]: new Date(`${year}-01-01T00:00:00Z`),
+        [Op.lt]: new Date(`${year + 1}-01-01T00:00:00Z`),
+      };
+    }
+
+    const { count, rows: researchs } = await research.findAndCountAll({
+      where: whereCondition,
+      order: [['createdAt', 'DESC']], // Optional: default sorting
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+      include: [
+        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+        { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
+        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+      ]
+    });
+
+    res.status(200).json({
+      message: `research for Prodi ${prodiId} retrieved successfully`,
+      total_count: count,
+      total_pages: Math.ceil(count / pageSize),
+      current_page: page,
+      data: researchs,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+const getResearchStatusCountByProdi = async (req, res) => {
+  try {
+    const user_id = req.user.user_id;
+    const role = req.user.role;
+
+    // Pastikan role user adalah 'prodi'
+    if (role !== 'prodi') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Ambil data prodi berdasarkan user_id
+    const prodiUser = await prodis.findOne({ where: { user_id: user_id } });
+    if (!prodiUser) {
+      return res.status(404).json({ message: 'Prodi user not found' });
+    }
+
+    const prodiId = prodiUser.prodi_id;
+
+    // Hitung jumlah final projects berdasarkan status dan prodi_id
+    const pendingCount = await research.count({
+      where: { status: 'pending', prodi_id: prodiId }
+    });
+    const approvedCount = await research.count({
+      where: { status: 'approved', prodi_id: prodiId }
+    });
+    const rejectedCount = await research.count({
+      where: { status: 'rejected', prodi_id: prodiId }
+    });
+
+    const data = {
+      pending: pendingCount,
+      approved: approvedCount,
+      rejected: rejectedCount
+    };
+
+    res.status(200).json({
+      message: 'Success fetch data',
+      data: [data]
+    });
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).json({
+      message: 'Error fetching data',
+      error: error.message
+    });
+  }
+};
+
+
+async function getAllResearchsTotal(req, res) {
+  try {
+    // Fetch all unique fakultas_id from finalprojects
+    const uniqueFakultasIds = await research.findAll({
+      attributes: ['fakultas_id'],
+      group: ['fakultas_id'],
+      raw: true
+    });
+
+    // Fetch final projects for each unique fakultas_id
+    const fakultasProjects = await Promise.all(
+      uniqueFakultasIds.map(async fakultasData => {
+        const { fakultas_id } = fakultasData;
+
+        // Prepare pagination parameters
+        const page = parseInt(req.query.page, 10) || 1;
+        const pageSize = parseInt(req.query.pageSize, 10) || 10;
+        const year = req.query.year ? parseInt(req.query.year) : null;
+
+        // Prepare conditions for where clause
+        let whereCondition = { fakultas_id };
+
+        if (year) {
+          whereCondition.createdAt = {
+            [Op.gte]: new Date(`${year}-01-01T00:00:00Z`),
+            [Op.lt]: new Date(`${year + 1}-01-01T00:00:00Z`),
+          };
+        }
+
+        // Fetch final projects based on fakultas_id and optional year filter
+        const { count, rows: researchs } = await research.findAndCountAll({
+          where: whereCondition,
+          order: [['createdAt', 'DESC']], // Optional: default sorting
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+          include: [
+            { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+            { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
+            { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+          ]
+        });
+
+        return {
+          fakultas_id,
+          total_count: count,
+          total_pages: Math.ceil(count / pageSize),
+          current_page: page,
+          data: researchs
+        };
+      })
+    );
+
+    // Respond with all projects data for each fakultas_id
+    res.status(200).json({
+      message: 'Final Projects retrieved successfully',
+      data: fakultasProjects
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
 paginate.paginate(research)
 
 module.exports = {
@@ -544,5 +793,9 @@ module.exports = {
   getAllResearchPublic,
   getDetailProjectsPublicById,
   getAllResearchStatusCount,
+  getAllResearchByFakultasName,
+  getAllResearchByProdiName,
+  getResearchStatusCountByProdi,
+  getAllResearchsTotal,
   updateStatusProject
 }

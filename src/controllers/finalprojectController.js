@@ -78,8 +78,20 @@ async function getAllFinalProjects (req, res) {
   try {
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
+    const year = req.query.year ? parseInt(req.query.year, 10) : null;
+
+    // Prepare conditions for where clause
+    let whereCondition = {};
+
+    if (year) {
+      whereCondition.createdAt = {
+        [Op.gte]: new Date(`${year}-01-01T00:00:00Z`),
+        [Op.lt]: new Date(`${year + 1}-01-01T00:00:00Z`),
+      };
+    }
 
     const result = await finalprojects.paginate({
+      where: whereCondition,
       page: page,
       paginate: pageSize,
       include: [
@@ -104,7 +116,7 @@ async function getAllFinalProjects (req, res) {
   } catch (err) {
     console.error('Error:', err)
     res.status(500).send({ message: 'Internal server error' })
-  }
+  } 
 }
 
 async function getAllFinalProjectsByUserId (req, res, next) {
@@ -793,6 +805,244 @@ const updateStatusProject = async (req, res) => {
   }
 }
 
+async function getAllFinalProjectsByFakultasName(req, res) {
+  const user_id = req.user.user_id;
+  const role = req.user.role;
+
+  try {
+    // Check if the role is 'fakultas'
+    if (role !== 'fakultas') {
+      return res.status(403).json({ message: 'Access denied', data: null });
+    }
+
+    // Fetch user details to get fakultas_id
+    const fakultasUser = await fakultas.findOne({ where: { user_id: user_id } });
+
+    if (!fakultasUser) {
+      return res.status(404).json({ message: 'Fakultas user not found', data: null });
+    }
+
+    const fakultasId = fakultasUser.fakultas_id;
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const pageSize = parseInt(req.query.pageSize, 10) || 10;
+    const year = req.query.year ? parseInt(req.query.year) : null;
+
+    // Prepare conditions for where clause
+    let whereCondition = { fakultas_id: fakultasId };
+
+    if (year) {
+      whereCondition.createdAt = {
+        [Op.gte]: new Date(`${year}-01-01T00:00:00Z`),
+        [Op.lt]: new Date(`${year + 1}-01-01T00:00:00Z`),
+      };
+    }
+
+    // Fetch final projects based on fakultas_id and optional year filter
+    const { count, rows: finalProjects } = await finalprojects.findAndCountAll({ 
+      where: whereCondition,
+      order: [['createdAt', 'DESC']], // Optional: default sorting
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+      include: [
+        { model: mahasiswas, attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim'] },
+        { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
+        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+      ]
+    });
+
+    res.status(200).json({
+      message: `Final Projects for Fakultas ${fakultasId} retrieved successfully`,
+      total_count: count,
+      total_pages: Math.ceil(count / pageSize),
+      current_page: page,
+      data: finalProjects,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+async function getAllFinalProjectsByProdiName(req, res) {
+  const user_id = req.user.user_id;
+  const role = req.user.role;
+
+  try {
+    // Check if the role is 'fakultas'
+    if (role !== 'prodi') {
+      return res.status(403).json({ message: 'Access denied', data: null });
+    }
+
+    // Fetch user details to get fakultas_id
+    const prodiUser = await prodis.findOne({ where: { user_id: user_id } });
+
+    if (!prodiUser) {
+      return res.status(404).json({ message: 'Fakultas user not found', data: null });
+    }
+
+    const prodiId = prodiUser.prodi_id;
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const pageSize = parseInt(req.query.pageSize, 10) || 10;
+    const year = req.query.year ? parseInt(req.query.year) : null;
+    const prodiName = req.query.prodiName ? req.query.prodiName.trim() : null;
+
+    // Prepare conditions for where clause
+    let whereCondition = { '$prodi.prodi_id$': prodiId }; // Note the use of aliasing for include model
+
+    if (prodiName) {
+      whereCondition['$prodi.nama_prodi$'] = prodiName; // Using alias to reference the included model
+    }
+
+    if (year) {
+      whereCondition.createdAt = {
+        [Op.gte]: new Date(`${year}-01-01T00:00:00Z`),
+        [Op.lt]: new Date(`${year + 1}-01-01T00:00:00Z`),
+      };
+    }
+
+    // Fetch final projects based on fakultas_id, optional prodiName filter, and optional year filter
+    const { count, rows: finalProjects } = await finalprojects.findAndCountAll({
+      where: whereCondition,
+      order: [['createdAt', 'DESC']], // Optional: default sorting
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+      include: [
+        { model: mahasiswas, attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim'] },
+        { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
+        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+      ]
+    });
+
+    res.status(200).json({
+      message: `Final Projects for Prodi ${prodiId} retrieved successfully`,
+      total_count: count,
+      total_pages: Math.ceil(count / pageSize),
+      current_page: page,
+      data: finalProjects,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+const getFinalProjectStatusCountByProdi = async (req, res) => {
+  try {
+    const user_id = req.user.user_id;
+    const role = req.user.role;
+
+    // Pastikan role user adalah 'prodi'
+    if (role !== 'prodi') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Ambil data prodi berdasarkan user_id
+    const prodiUser = await prodis.findOne({ where: { user_id: user_id } });
+    if (!prodiUser) {
+      return res.status(404).json({ message: 'Prodi user not found' });
+    }
+
+    const prodiId = prodiUser.prodi_id;
+
+    // Hitung jumlah final projects berdasarkan status dan prodi_id
+    const pendingCount = await finalprojects.count({
+      where: { status: 'pending', prodi_id: prodiId }
+    });
+    const approvedCount = await finalprojects.count({
+      where: { status: 'approved', prodi_id: prodiId }
+    });
+    const rejectedCount = await finalprojects.count({
+      where: { status: 'rejected', prodi_id: prodiId }
+    });
+
+    const data = {
+      pending: pendingCount,
+      approved: approvedCount,
+      rejected: rejectedCount
+    };
+
+    res.status(200).json({
+      message: 'Success fetch data',
+      data: [data]
+    });
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).json({
+      message: 'Error fetching data',
+      error: error.message
+    });
+  }
+};
+
+async function getAllFinalProjectsTotal(req, res) {
+  try {
+    // Fetch all unique fakultas_id from finalprojects
+    const uniqueFakultasIds = await finalprojects.findAll({
+      attributes: ['fakultas_id'],
+      group: ['fakultas_id'],
+      raw: true
+    });
+
+    // Fetch final projects for each unique fakultas_id
+    const fakultasProjects = await Promise.all(
+      uniqueFakultasIds.map(async fakultasData => {
+        const { fakultas_id } = fakultasData;
+
+        // Prepare pagination parameters
+        const page = parseInt(req.query.page, 10) || 1;
+        const pageSize = parseInt(req.query.pageSize, 10) || 10;
+        const year = req.query.year ? parseInt(req.query.year) : null;
+
+        // Prepare conditions for where clause
+        let whereCondition = { fakultas_id };
+
+        if (year) {
+          whereCondition.createdAt = {
+            [Op.gte]: new Date(`${year}-01-01T00:00:00Z`),
+            [Op.lt]: new Date(`${year + 1}-01-01T00:00:00Z`),
+          };
+        }
+
+        // Fetch final projects based on fakultas_id and optional year filter
+        const { count, rows: finalProjects } = await finalprojects.findAndCountAll({
+          where: whereCondition,
+          order: [['createdAt', 'DESC']], // Optional: default sorting
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+          include: [
+            { model: mahasiswas, attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim'] },
+            { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
+            { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+          ]
+        });
+
+        return {
+          fakultas_id,
+          total_count: count,
+          total_pages: Math.ceil(count / pageSize),
+          current_page: page,
+          data: finalProjects
+        };
+      })
+    );
+
+    // Respond with all projects data for each fakultas_id
+    res.status(200).json({
+      message: 'Final Projects retrieved successfully',
+      data: fakultasProjects
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+
+
+
+
 paginate.paginate(finalprojects)
 
 module.exports = {
@@ -809,5 +1059,9 @@ module.exports = {
   getAllSameProjectPublic,
   getAllFakultasTotalCount,
   getAllFinalProjectsStatusCount,
+  getAllFinalProjectsByFakultasName,
+  getAllFinalProjectsByProdiName,
+  getFinalProjectStatusCountByProdi,
+  getAllFinalProjectsTotal,
   updateStatusProject
 }

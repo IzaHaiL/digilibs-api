@@ -82,4 +82,10 @@ router.get('/public/', researchController.getAllResearchPublic)
 
 router.get('/public/detail/:id', researchController.getDetailProjectsPublicById)
 
+
+router.get('/private/fakultas/',authenticateToken, researchController.getAllResearchByFakultasName)
+router.get('/private/prodi/',authenticateToken, researchController.getAllResearchByProdiName)
+router.get('/private/prodi/status/count',authenticateToken, researchController.getResearchStatusCountByProdi)
+router.get('/private/total',authenticateToken, researchController.getAllResearchsTotal)
+
 module.exports = router
