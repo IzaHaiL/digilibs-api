@@ -50,7 +50,7 @@ async function signUp (req, res) {
     const newUser = await user.create({
       username,
       email,
-      role: 'mahasiswa',
+      role: 'admin',
       isActive: true,
       password: hashedPassword
     })
