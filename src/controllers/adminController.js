@@ -180,7 +180,6 @@ async function generateDosenAccounts(req, res, next) {
     const dosenUsername = faker.internet.userName();
     const hashedDosenPassword = await bcrypt.hash(dosenUsername, saltRounds);
     const dosenUser = await users.create({
-      user_id: nanoid(20),
       username: dosenUsername,
       email: faker.internet.email(),
       password: hashedDosenPassword,
@@ -192,8 +191,8 @@ async function generateDosenAccounts(req, res, next) {
     const Dosen = await dosen.create({
       dosen_id: nanoid(20),
       nama_dosen: faker.person.fullName(), // Use the correct method
-      nik: faker.random.alphaNumeric(16),
-      nidn: faker.random.alphaNumeric(10),
+      nik: faker.helpers.replaceSymbols('##########????????'),
+      nidn: faker.helpers.replaceSymbols('##########'),
       alamat: faker.address.streetAddress(),
       tempat_lahir: faker.address.city(),
       tanggal_lahir: faker.date.past(40, new Date(1980, 0, 1)),
@@ -240,8 +239,8 @@ async function generateMahasiswaAccounts(req, res, next) {
     const Mahasiswa = await mahasiswa.create({
       mahasiswa_id: nanoid(20),
       nama_mahasiswa: faker.person.fullName(), // Use the correct method
-      nik: faker.random.alphaNumeric(16),
-      nim: faker.random.alphaNumeric(10),
+      nik: faker.helpers.replaceSymbols('##########????????'),
+      nidn: faker.helpers.replaceSymbols('##########'),
       alamat: faker.address.streetAddress(),
       tempat_lahir: faker.address.city(),
       tanggal_lahir: faker.date.past(20, new Date(2000, 0, 1)),
