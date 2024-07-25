@@ -131,8 +131,8 @@ async function generateAccounts(req, res, next) {
       const Mahasiswa = await mahasiswa.create({
         mahasiswa_id: nanoid(20),
         nama_mahasiswa: faker.person.fullName(), // Use the correct method
-        nik: faker.random.alphaNumeric(16),
-        nim: faker.random.alphaNumeric(10),
+        nik: faker.helpers.replaceSymbols('##########????????'),
+        nim: faker.helpers.replaceSymbols('##########'),
         alamat: faker.address.streetAddress(),
         tempat_lahir: faker.address.city(),
         tanggal_lahir: faker.date.past(20, new Date(2000, 0, 1)),
@@ -240,7 +240,7 @@ async function generateMahasiswaAccounts(req, res, next) {
       mahasiswa_id: nanoid(20),
       nama_mahasiswa: faker.person.fullName(), // Use the correct method
       nik: faker.helpers.replaceSymbols('##########????????'),
-      nidn: faker.helpers.replaceSymbols('##########'),
+      nim: faker.helpers.replaceSymbols('##########'),
       alamat: faker.address.streetAddress(),
       tempat_lahir: faker.address.city(),
       tanggal_lahir: faker.date.past(20, new Date(2000, 0, 1)),
