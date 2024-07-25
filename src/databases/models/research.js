@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         otherKey: 'kategori_id',
       });
       Research.belongsToMany(models.dosen, {
-        through: 'dosebresearchs',
+        through: 'dosenresearchs',
         as: 'kontributor',
         foreignKey: 'research_id',
         otherKey: 'dosen_id',
