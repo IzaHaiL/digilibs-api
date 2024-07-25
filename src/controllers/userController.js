@@ -613,8 +613,8 @@ async function createAdmin (req, res) {
 
 async function getUsers (req, res) {
   try {
-    const users = await users.findAll()
-    res.status(200).json(users)
+    const Users = await users.findAll()
+    res.status(200).json(Users)
   } catch (error) {
     console.error(error)
     res.status(500).json({ error: 'Internal Server Error' })

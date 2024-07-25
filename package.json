@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.617.0",
+    "@faker-js/faker": "^8.4.1",
     "badwords": "^1.0.0",
     "bcrypt": "^5.1.1",
     "compute-cosine-similarity": "^1.1.0",
@@ -32,6 +33,7 @@
     "sequelize-cli": "^6.6.2",
     "sequelize-paginate": "^1.1.6",
     "stopword": "^3.0.1",
-    "tf-idf": "^1.0.0"
+    "tf-idf": "^1.0.0",
+    "txtgen": "^3.0.7"
   }
 }
