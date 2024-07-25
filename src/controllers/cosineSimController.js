@@ -76,7 +76,7 @@ const calculateSimilarities = async (documents, inputText) => {
         const text2Clean = preprocessText(doc.abstract);
         tfidf.addDocument(text2Clean);
 
-        const similarity = calculateCosineSimilarity(tfidf, 0, 1);
+        const similarity = calculateCosineSimilarity(tfidf, 0, 2);
         return {
             id: doc.research_id || doc.project_id,
             title: doc.title,
@@ -96,18 +96,16 @@ const getSimilarity = async (req, res) => {
     try {
         const { inputText } = req.body;
 
-        // Ensure inputText is provided and is a string
         if (typeof inputText !== 'string' || !inputText.trim()) {
             return res.status(400).json({ error: 'Input text must be a non-empty string' });
         }
 
-        // Retrieve documents from database
-        const [researchAbstracts, finalProjectDescriptions] = await Promise.all([
+        const [researchAbstracts, finalProjectsAbstracts] = await Promise.all([
             researchs.findAll({
-                attributes: ['research_id','title', 'abstract', 'createdAt', 'prodi_id', 'total_views'],
+                attributes: ['research_id', 'title', 'abstract', 'createdAt', 'prodi_id', 'total_views'],
                 include: [
                     { model: prodi, attributes: ['nama_prodi'] },
-                    { model: dosen , attributes: ['nama_dosen', 'nidn'] }
+                    { model: dosen, attributes: ['nama_dosen', 'nidn'] }
                 ]
             }),
             finalprojects.findAll({
@@ -119,30 +117,27 @@ const getSimilarity = async (req, res) => {
             })
         ]);
 
-        if (researchAbstracts.length === 0 || finalProjectDescriptions.length === 0) {
-            throw new Error('No researchs abstracts or final projects found');
+        console.log('Research Abstracts:', researchAbstracts);
+        console.log('Final Abstracts:', finalProjectsAbstracts);
+
+        if (researchAbstracts.length === 0 && finalProjectsAbstracts.length === 0) {
+            throw new Error('No research abstracts or final projects found');
         }
 
-        // Extract keywords from input text
         const inputKeywords = extractKeywords(preprocessText(inputText));
 
-        // Calculate similarities
         const [researchSimilarities, finalProjectSimilarities] = await Promise.all([
-            calculateSimilarities(researchAbstracts, inputText),
-            calculateSimilarities(finalProjectDescriptions, inputText)
+            researchAbstracts.length > 0 ? calculateSimilarities(researchAbstracts, inputText) : [],
+            finalProjectsAbstracts.length > 0 ? calculateSimilarities(finalProjectsAbstracts, inputText) : []
         ]);
 
-        // Combine results into one array
         const combinedSimilarities = [...researchSimilarities, ...finalProjectSimilarities];
 
-        // Apply minimum similarity threshold
-        const similarityThreshold = 10;  // Example threshold
+        const similarityThreshold = 10;
         const filteredSimilarities = combinedSimilarities.filter(item => item.similarity >= similarityThreshold);
 
-        // Sort combined results by similarity in descending order
         filteredSimilarities.sort((a, b) => b.similarity - a.similarity);
 
-        // Return results with input keywords
         return res.json({
             message: 'Similarity calculation complete',
             keywords: inputKeywords.join(', '),
@@ -154,6 +149,8 @@ const getSimilarity = async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
 
 module.exports = {  
     getSimilarity
