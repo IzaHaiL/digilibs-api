@@ -16,7 +16,6 @@ router.post('/signin', userController.signIn)
 router.post(
   '/signout',
   authenticateToken,
-  authenticateRefreshToken,
   userController.signOut
 )
 

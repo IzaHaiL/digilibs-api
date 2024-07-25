@@ -1102,7 +1102,7 @@ async function getAllFinalProjectsByProdiName(req, res) {
     const prodiName = req.query.prodiName ? req.query.prodiName.trim() : null;
 
     // Prepare conditions for where clause
-    let whereCondition = { '$prodi.prodi_id$': prodiId }; // Note the use of aliasing for include model
+    let whereCondition = { prodi_id: prodiId };
 
     if (prodiName) {
       whereCondition['$prodi.nama_prodi$'] = prodiName; // Using alias to reference the included model
