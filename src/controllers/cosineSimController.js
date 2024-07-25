@@ -1,4 +1,4 @@
-const { finalprojects, research, prodis, mahasiswas, dosens } = require('../databases/models');
+const { finalprojects, researchs, prodi, mahasiswa, dosen } = require('../databases/models');
 const natural = require('natural');  // For TF-IDF and stemming
 const stopword = require('stopword');  // For removing stopwords
 
@@ -63,14 +63,14 @@ const extractKeywords = (text, numKeywords = 500) => {
 }
 
 // Function to calculate similarities for documents
-const calculateSimilarities = async (documents, inputText, type) => {
+const calculateSimilarities = async (documents, inputText) => {
     const text1Clean = preprocessText(inputText);
     const tfidf = new natural.TfIdf();
     tfidf.addDocument(text1Clean);
 
     return Promise.all(documents.map(async doc => {
         if (typeof doc.abstract !== 'string') {
-            return { id: doc[`${type}_id`], similarity: null, type };
+            return { id: doc.research_id || doc.project_id, similarity: null };
         }
 
         const text2Clean = preprocessText(doc.abstract);
@@ -78,8 +78,8 @@ const calculateSimilarities = async (documents, inputText, type) => {
 
         const similarity = calculateCosineSimilarity(tfidf, 0, 1);
         return {
-            id: doc[`${type}_id`],
-            title: type === 'finalproject' ? doc.title : undefined,
+            id: doc.research_id || doc.project_id,
+            title: doc.title,
             abstract: doc.abstract,
             createdAt: doc.createdAt,  // Additional attribute
             prodi: doc.prodi,          // Additional attribute
@@ -87,7 +87,6 @@ const calculateSimilarities = async (documents, inputText, type) => {
             dosen: doc.dosen,          // Additional attribute
             total_views: doc.total_views, // Additional attribute
             similarity,  // Already formatted as percentage
-            type
         };
     }));
 }
@@ -104,24 +103,24 @@ const getSimilarity = async (req, res) => {
 
         // Retrieve documents from database
         const [researchAbstracts, finalProjectDescriptions] = await Promise.all([
-            research.findAll({
-                attributes: ['research_id', 'abstract', 'createdAt', 'prodi_id', 'total_views'],
+            researchs.findAll({
+                attributes: ['research_id','title', 'abstract', 'createdAt', 'prodi_id', 'total_views'],
                 include: [
-                    { model: prodis, attributes: ['nama_prodi'] },
-                    { model: dosens , attributes: ['nama_dosen', 'nidn'] }
+                    { model: prodi, attributes: ['nama_prodi'] },
+                    { model: dosen , attributes: ['nama_dosen', 'nidn'] }
                 ]
             }),
             finalprojects.findAll({
                 attributes: ['project_id', 'title', 'abstract', 'createdAt', 'prodi_id', 'total_views'],
                 include: [
-                    { model: prodis, attributes: ['nama_prodi'] },
-                    { model: mahasiswas, attributes: ['nama_mahasiswa', 'nim'] },
+                    { model: prodi, attributes: ['nama_prodi'] },
+                    { model: mahasiswa, attributes: ['nama_mahasiswa', 'nim'] },
                 ]
             })
         ]);
 
         if (researchAbstracts.length === 0 || finalProjectDescriptions.length === 0) {
-            throw new Error('No research abstracts or final projects found');
+            throw new Error('No researchs abstracts or final projects found');
         }
 
         // Extract keywords from input text
@@ -129,8 +128,8 @@ const getSimilarity = async (req, res) => {
 
         // Calculate similarities
         const [researchSimilarities, finalProjectSimilarities] = await Promise.all([
-            calculateSimilarities(researchAbstracts, inputText, 'research'),
-            calculateSimilarities(finalProjectDescriptions, inputText, 'finalproject')
+            calculateSimilarities(researchAbstracts, inputText),
+            calculateSimilarities(finalProjectDescriptions, inputText)
         ]);
 
         // Combine results into one array

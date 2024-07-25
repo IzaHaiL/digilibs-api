@@ -13,6 +13,7 @@ const {
   isUserOwner,
   isMahasiswa
 } = require('../middlewares/auth')
+const {upload} = require('../middlewares/multer');
 
 // Create a new research
 router.post(
@@ -20,6 +21,7 @@ router.post(
   authenticateToken,
   checkBlacklist,
   isDosen,
+  upload.array('files', 10),
   researchController.createResearch
 )
 
@@ -42,17 +44,16 @@ router.get(
 )
 
 router.delete(
-  '/private/:id',
+  '/private/delete/:id',
   authenticateToken,
-  checkBlacklist,
-  isUserOwner,
-  isMahasiswa,
+  isDosen,
   researchController.deleteResearch
 )
 
 router.put(
-  '/private/update/:id',
+  '/private/update/:research_id',
   authenticateToken,
+  upload.array('files', 10),
   researchController.updateResearch
 )
 

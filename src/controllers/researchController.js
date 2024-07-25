@@ -1,76 +1,115 @@
 const {
-  research,
-  mahasiswas,
-  dosens,
-  prodis,
+  researchs,
+  mahasiswa,
+  dosen,
+  prodi,
   fakultas,
-  lppms,
-  admin,
-  sequelize
+  kategori,
+  berkas,
 } = require('../databases/models')
 const { nanoid } = require('nanoid')
 const { Op } = require('sequelize')
 const Validator = require('fastest-validator')
 const v = new Validator()
 const paginate = require('sequelize-paginate')
-
-// Create a new research
-async function createResearch (req, res, next) {
+const { uploadFileToSpace , deleteFileFromSpace } = require('../middlewares/multer')
+// Create a new researchs
+async function createResearch(req, res, next) {
   try {
-    const dosen = await dosens.findOne({ where: { user_id: req.user.user_id } })
-    if (!dosen) {
+    console.log('Received kontributor:', req.body.kontributor);
+    console.log('Received kategori:', req.body.kategori);
+
+    const Dosen = await dosen.findOne({ where: { user_id: req.users.user_id } });
+    if (!Dosen) {
       return res.status(404).json({
-        message: 'Mahasiswa data not found for the current user'
-      })
+        message: 'Dosen data not found for the current users'
+      });
     }
+
     const data = {
-      user_id: req.user.user_id,
-      dosen_id: dosen.dosen_id,
+      user_id: req.users.user_id,
+      dosen_id: Dosen.dosen_id,
       title: req.body.title,
       title_eng: req.body.title_eng,
       abstract: req.body.abstract,
       abstract_eng: req.body.abstract_eng,
-      kontributor: req.body.kontributor,
-      fakultas_id: dosen.fakultas_id,
-      prodi_id: dosen.prodi_id,
+      fakultas_id: Dosen.fakultas_id,
+      prodi_id: Dosen.prodi_id,
       url_research: req.body.url_research,
       berkas_research: req.body.berkas_research,
       submissionDate: req.body.submissionDate,
       aprovaldate: req.body.aprovaldate,
       createdAt: new Date(),
       updatedAt: new Date()
-    }
+    };
+
     const schema = {
       title: { type: 'string', min: 5, max: 255, optional: false },
       abstract: { type: 'string', optional: false },
-      kontributor: { type: 'string', optional: true },
       fakultas_id: { type: 'string', optional: false },
       prodi_id: { type: 'string', optional: false },
       url_research: { type: 'string', optional: true },
-      berkas_finalprojects: { type: 'string', optional: true },
-      submissionDate: { type: 'date', optional: true }
-    }
-    const validationResult = v.validate(data, schema)
+      submissionDate: { type: 'date', optional: true },
+      kontributor: { type: 'array', optional: true },
+      kategori: { type: 'array', optional: true }
+    };
+
+    const validationResult = v.validate(data, schema);
     if (validationResult !== true) {
       return res.status(400).json({
         message: 'Validation Failed',
         data: validationResult
-      })
+      });
     }
-    const result = await research.create(data)
+
+    const result = await researchs.create(data);
+
+    const files = req.files;
+    if (files && files.length > 0) {
+      const fileRecords = await Promise.all(
+        files.map(async (file) => {
+          const fileLocation = await uploadFileToSpace(file.buffer, file.originalname, 'researchs');
+          return await berkas.create({
+            url_berkas: fileLocation,
+            research_id: result.research_id
+          });
+        })
+      );
+      result.files = fileRecords;
+    }
+
+    if (req.body.kategori && Array.isArray(req.body.kategori)) {
+      const categories = req.body.kategori;
+      const categoryRecords = await kategori.findAll({
+        where: {
+          kategori_id: categories
+        }
+      });
+      await result.addKategori(categoryRecords);
+    }
+
+    if (req.body.kontributor && Array.isArray(req.body.kontributor)) {
+      const kontributors = req.body.kontributor;
+      const kontributorRecords = await dosen.findAll({
+        where: {
+          dosen_id: kontributors
+        }
+      });
+      await result.addKontributor(kontributorRecords);
+    }
+
     res.status(201).json({
-      message: 'researchs Created Successfully',
+      message: 'Research Created Successfully',
       data: result
-    })
+    });
   } catch (err) {
-    console.error(err)
+    console.error(err);
     res.status(500).json({
-      message: 'Create researchs Failed',
+      message: 'Create Research Failed',
       data: err
-    })
+    });
   }
 }
-
 async function getAllResearch (req, res, next) {
   try {
     const page = parseInt(req.query.page, 10) || 1
@@ -87,19 +126,36 @@ async function getAllResearch (req, res, next) {
       }
     }
 
-    const result = await research.paginate({
+    const result = await researchs.paginate({
       page: page,
       paginate: pageSize,
       where: whereCondition, // Include the where condition for filtering by year
       include: [
-        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+        { model: dosen, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+        {
+          model: berkas,
+          attributes: ['berkas_id', 'url_berkas'],
+          as: 'berkas'
+        },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
       ]
     })
 
     const response = {
-      message: 'Success fetch research',
+      message: 'Success fetch researchs',
       total_count: result.total,
       total_pages: result.pages,
       current_page: result.page,
@@ -108,37 +164,53 @@ async function getAllResearch (req, res, next) {
 
     res.send(response)
   } catch (err) {
-    console.error('Error fetching research:', err)
+    console.error('Error fetching researchs:', err)
     res.status(500).send({ error: 'Internal Server Error' })
   }
 }
 async function getAllResearchByUserId (req, res, next) {
   try {
-    const userIdFromToken = req.user.user_id
+    const userIdFromToken = req.users.user_id
 
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
 
-    const result = await research.findAndCountAll({
+    const result = await researchs.findAndCountAll({
       where: { user_id: userIdFromToken },
       limit: pageSize,
       offset: (page - 1) * pageSize,
       include: [
-        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+        { model: dosen, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+        {
+          model: berkas,
+          attributes: ['berkas_id', 'url_berkas'],
+          as: 'berkas'
+        },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
       ]
     })
-
     if (result.count === 0) {
       return res.status(404).json({
-        message: 'research Project not found',
+        message: 'researchs Project not found',
         data: null
       })
     }
 
     const response = {
-      message: 'Success fetching research projects by user ID',
+      message: 'Success fetching researchs projects by users ID',
       total_count: result.count,
       total_pages: Math.ceil(result.count / pageSize),
       current_page: page,
@@ -149,26 +221,45 @@ async function getAllResearchByUserId (req, res, next) {
   } catch (err) {
     console.error(err)
     res.status(500).json({
-      message: 'Failed to fetch research projects',
+      message: 'Failed to fetch researchs projects',
       error: err.message
     })
   }
 }
+
+
 async function getResearchById (req, res, next) {
   try {
-    const research_id = req.params.id
+    const researchId = req.params.id
 
-    const research = await research.findByPk(research_id, {
+    const research = await researchs.findByPk(researchId, {
       include: [
-        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+        { model: dosen, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+        {
+          model: berkas,
+          attributes: ['berkas_id', 'url_berkas'],
+          as: 'berkas'
+        },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
       ]
     })
 
     if (!research) {
       res.status(404).json({
-        message: 'Research not found',
+        message: 'researchs Project not found',
         data: null
       })
     } else {
@@ -179,140 +270,164 @@ async function getResearchById (req, res, next) {
     }
   } catch (err) {
     res.status(500).json({
-      message: 'Read Research Failed',
+      message: 'Read researchs Project Failed',
       data: err.toString()
     })
   }
 }
 
-async function getResearchById (req, res, next) {
+async function updateResearch(req, res, next) {
+  console.log('files:', req.files);
   try {
-    const researchId = req.params.id
-
-    const researchs = await research.findByPk(researchId, {
-      include: [
-        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
-        { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
-      ]
-    })
+    const research = await researchs.findByPk(req.params.research_id);
 
     if (!research) {
-      res.status(404).json({
-        message: 'research Project not found',
-        data: null
-      })
-    } else {
-      res.status(200).json({
-        message: 'Success',
-        data: researchs
-      })
-    }
-  } catch (err) {
-    res.status(500).json({
-      message: 'Read research Project Failed',
-      data: err.toString()
-    })
-  }
-}
-
-async function updateResearch (req, res, next) {
-  try {
-    const { research_id } = req.params
-
-    // Periksa apakah research project dengan project_id yang diberikan ada di database
-    const existingProject = await research.findByPk(research_id)
-    if (!existingProject) {
       return res.status(404).json({
-        message: 'Researchs not found'
-      })
+        message: 'Research not found'
+      });
     }
 
-    // Dapatkan data dosen dari database berdasarkan user_id dari JWT
-    const dosen = await dosens.findOne({ where: { user_id: req.user.user_id } })
+    // Prepare data for update
+    const data = {};
+    if (req.body.title) data.title = req.body.title;
+    if (req.body.title_eng) data.title_eng = req.body.title_eng;
+    if (req.body.abstract) data.abstract = req.body.abstract;
+    if (req.body.abstract_eng) data.abstract_eng = req.body.abstract_eng;
+    if (req.body.url_research) data.url_research = req.body.url_research;
+    if (req.body.submissionDate) data.submissionDate = req.body.submissionDate;
+    if (req.body.aprovaldate) data.aprovaldate = req.body.aprovaldate;
+    data.updatedAt = new Date();
 
-    if (!dosen) {
-      return res.status(404).json({
-        message: 'Dosen data not found for the current user'
-      })
+    // Update the research only if there are changes
+    if (Object.keys(data).length > 1) {
+      await research.update(data);
     }
 
-    // Konfigurasi data yang akan diupdate
-    const dataToUpdate = {
-      title: req.body.title || existingProject.title,
-      title_eng: req.body.title_eng || existingProject.title_eng,
-      abstract: req.body.abstract || existingProject.abstract,
-      abstract_eng: req.body.abstract_eng || existingProject.abstract_eng,
-      kontributor: req.body.kontributor || existingProject.kontributor,
-      fakultas_id: req.body.fakultas_id || mahasiswa.fakultas_id,
-      prodi_id: req.body.prodi_id || mahasiswa.prodi_id,
-      ulr_research: req.body.ulr_research || existingProject.ulr_research,
-      berkas_research:
-        req.body.berkas_research || existingProject.berkas_research,
-      submissiondate: req.body.submissiondate || existingProject.submissiondate,
-      aprovaldate: req.body.aprovaldate || existingProject.aprovaldate,
-      updatedAt: new Date()
+    // Handle file uploads to cloud storage
+    if (req.files && req.files.length > 0) {
+      // Add new files
+      const fileRecords = await Promise.all(
+        req.files.map(async (file) => {
+          const fileLocation = await uploadFileToSpace(file.buffer, file.originalname, 'researchs');
+          return await berkas.create({
+            url_berkas: fileLocation,
+            research_id: research.research_id
+          });
+        })
+      );
+      research.files = research.files ? [...research.files, ...fileRecords] : fileRecords; // Ensure research.files is an array
     }
 
-    // Validasi data yang akan diupdate
-    const schema = {
-      title: { type: 'string', min: 5, max: 255, optional: true },
-      abstract: { type: 'string', optional: true },
-      kontributor: { type: 'string', optional: true },
-      fakultas_id: { type: 'string', optional: true },
-      prodi_id: { type: 'string', optional: true },
-      ulr_research: { type: 'string', optional: true },
-      berkas_research: { type: 'string', optional: true },
-      submissionDate: { type: 'date', optional: true }
+    // Handle file deletions
+    if (req.body.deletedFileIds && req.body.deletedFileIds.length > 0) {
+      const deletedFileIds = req.body.deletedFileIds.split(',');
+
+      console.log('Files to be deleted:', deletedFileIds); // Log files to be deleted
+
+      // Find and delete files from cloud storage and database
+      const oldFiles = await berkas.findAll({
+        where: { research_id: research.research_id, berkas_id: deletedFileIds }
+      });
+
+      oldFiles.forEach(async (file) => {
+        try {
+          await deleteFileFromSpace(file.url_berkas);
+          await file.destroy();
+          console.log(`Deleted file: ${file.url_berkas}`); // Log each deleted file
+        } catch (err) {
+          console.error(`Error deleting file ${file.url_berkas}:`, err);
+        }
+      });
     }
 
-    const validationResult = v.validate(dataToUpdate, schema)
-
-    if (validationResult !== true) {
-      return res.status(400).json({
-        message: 'Validation Failed',
-        data: validationResult
-      })
+    // Handle categories association
+    let categories = req.body.kategori;
+    if (categories && !Array.isArray(categories)) {
+      categories = categories.split(',');
     }
 
-    // Lakukan update data research project
-    await research.update(dataToUpdate, {
-      where: { project_id: project_id }
-    })
+    if (categories && Array.isArray(categories)) {
+      const categoryRecords = await kategori.findAll({
+        where: {
+          kategori_id: categories
+        }
+      });
 
-    // Ambil data research project yang telah diupdate
-    const updatedProject = await research.findByPk(research_id)
+      await research.setKategori(categoryRecords);
+    }
+
+    // Handle kontributors association
+    let kontributors = req.body.kontributor;
+    if (kontributors && !Array.isArray(kontributors)) {
+      kontributors = kontributors.split(',');
+    }
+
+    if (kontributors && Array.isArray(kontributors)) {
+      const kontributorRecords = await dosen.findAll({
+        where: {
+          dosen_id: kontributors
+        }
+      });
+
+      await research.setKontributor(kontributorRecords);
+    }
 
     res.status(200).json({
-      message: 'research Project Updated Successfully',
-      data: updatedProject
-    })
+      message: 'Research Updated Successfully',
+      data: research
+    });
   } catch (err) {
-    console.error(err)
+    console.error(err);
     res.status(500).json({
-      message: 'Update research Project Failed',
-      error: err.message
-    })
+      message: 'Update Research Failed',
+      data: err
+    });
   }
 }
 
 async function deleteResearch (req, res, next) {
   try {
-    const research_id = req.params.id
+    const researchId = req.params.id
 
-    const existingResearch = await research.findByPk(research_id)
+    const existingResearch = await researchs.findByPk(researchId)
 
     if (!existingResearch) {
-      res.status(404).json({
-        message: 'Research not found',
-        data: null
-      })
-      return
+      const error = new Error('researchs not found');
+      error.status = 404;
+      throw error;
     }
 
-    const result = await research.destroy({
-      where: { research_id: research_id }
+    // Hapus file yang terkait di cloud storage
+    const relatedFiles = await berkas.findAll({
+      where: { research_id: researchId }
+    });
+
+    let failedToDeleteFiles = [];
+
+    for (const file of relatedFiles) {
+      try {
+        await deleteFileFromSpace(file.url_berkas);
+        await file.destroy();
+        console.log(`Deleted file: ${file.url_berkas}`);
+      } catch (err) {
+        console.error(`Error deleting file ${file.url_berkas}:`, err);
+        failedToDeleteFiles.push(file.url_berkas);
+      }
+    }
+
+    const result = await researchs.destroy({
+      where: { research_id: researchId }
     })
+
+    if (failedToDeleteFiles.length > 0) {
+      return res.status(500).json({
+        message: 'Delete researchs Failed. Some files in cloud storage were not deleted.',
+        data: {
+          deletedResearch: result,
+          failedToDeleteFiles: failedToDeleteFiles
+        }
+      });
+    }
 
     res.status(200).json({
       message: 'Success Delete Data',
@@ -320,10 +435,17 @@ async function deleteResearch (req, res, next) {
     })
   } catch (err) {
     console.error(err)
-    res.status(500).json({
-      message: 'Delete Research Failed',
-      data: err.toString()
-    })
+    if (err.status === 404) {
+      res.status(404).json({
+        message: err.message,
+        data: null
+      })
+    } else {
+      res.status(500).json({
+        message: 'Delete researchs Failed',
+        data: err.toString()
+      })
+    }
   }
 }
 
@@ -331,29 +453,29 @@ async function validatedResearch (req, res, next) {
   try {
     const research_id = req.params.id
 
-    const existingResearch = await research.findByPk(research_id)
+    const existingResearch = await researchs.findByPk(research_id)
 
     if (!existingResearch) {
       res.status(404).json({
-        message: 'Research not found',
+        message: 'researchs not found',
         data: null
       })
       return
     }
 
-    const result = await research.update(
+    const result = await researchs.update(
       { is_validated: true },
       { where: { research_id: research_id } }
     )
 
     res.status(200).json({
-      message: 'Success Validated Research',
+      message: 'Success Validated researchs',
       data: result
     })
   } catch (err) {
     console.error(err)
     res.status(500).json({
-      message: 'Validated Research Failed',
+      message: 'Validated researchs Failed',
       data: err.toString()
     })
   }
@@ -362,22 +484,34 @@ async function getAllResearchPublic (req, res, next) {
   try {
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
-    const result = await research.findAndCountAll({
+    const result = await researchs.findAndCountAll({
       limit: pageSize,
       offset: (page - 1) * pageSize,
       include: [
-        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+        { model: dosen, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
       ]
     })
-    const researchData = result.rows.map(research => {
-      const { berkas_research, ...researchData } = research.toJSON()
+    const researchData = result.rows.map(researchs => {
+      const { berkas_research, ...researchData } = researchs.toJSON()
       return researchData
     })
 
     const response = {
-      message: 'Success fetch research projects',
+      message: 'Success fetch researchs projects',
       total_count: result.count,
       total_pages: Math.ceil(result.count / pageSize),
       current_page: page,
@@ -387,7 +521,7 @@ async function getAllResearchPublic (req, res, next) {
     res.send(response)
   } catch (err) {
     res.status(500).send({
-      message: 'Fetch research Projects Failed',
+      message: 'Fetch researchs Projects Failed',
       data: err.toString()
     })
   }
@@ -397,11 +531,23 @@ async function getDetailProjectsPublicById (req, res, next) {
   try {
     const researchId = req.params.id
 
-    const project = await research.findByPk(researchId, {
+    const project = await researchs.findByPk(researchId, {
       include: [
-        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+        { model: dosen, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
       ]
     })
 
@@ -434,7 +580,7 @@ async function getDetailProjectsPublicById (req, res, next) {
 const getAllFakultasTotalCount = async (req, res) => {
   try {
     // Ambil semua fakultas_id yang unik
-    const uniqueFakultasIds = await research.findAll({
+    const uniqueFakultasIds = await researchs.findAll({
       attributes: ['fakultas_id'],
       group: ['fakultas_id'],
       raw: true
@@ -449,7 +595,7 @@ const getAllFakultasTotalCount = async (req, res) => {
           attributes: ['nama_fakultas']
         })
 
-        const total_project = await research.count({
+        const total_project = await researchs.count({
           where: { fakultas_id }
         })
 
@@ -473,11 +619,11 @@ const getAllFakultasTotalCount = async (req, res) => {
 
 const getAllResearchStatusCount = async (req, res) => {
   try {
-    const pendingCount = await research.count({ where: { status: 'pending' } })
-    const approvedCount = await research.count({
+    const pendingCount = await researchs.count({ where: { status: 'pending' } })
+    const approvedCount = await researchs.count({
       where: { status: 'approved' }
     })
-    const rejectedCount = await research.count({
+    const rejectedCount = await researchs.count({
       where: { status: 'rejected' }
     })
 
@@ -516,7 +662,7 @@ const updateStatusProject = async (req, res) => {
 
   try {
     // Cari project berdasarkan ID
-    const project = await research.findByPk(project_id)
+    const project = await researchs.findByPk(project_id)
 
     // Jika project tidak ditemukan
     if (!project) {
@@ -544,8 +690,8 @@ const updateStatusProject = async (req, res) => {
 }
 
 async function getAllResearchByFakultasName (req, res) {
-  const user_id = req.user.user_id
-  const role = req.user.role
+  const user_id = req.users.user_id
+  const role = req.users.role
 
   try {
     // Check if the role is 'fakultas'
@@ -553,13 +699,13 @@ async function getAllResearchByFakultasName (req, res) {
       return res.status(403).json({ message: 'Access denied', data: null })
     }
 
-    // Fetch user details to get fakultas_id
+    // Fetch users details to get fakultas_id
     const fakultasUser = await fakultas.findOne({ where: { user_id: user_id } })
 
     if (!fakultasUser) {
       return res
         .status(404)
-        .json({ message: 'Fakultas user not found', data: null })
+        .json({ message: 'Fakultas users not found', data: null })
     }
 
     const fakultasId = fakultasUser.fakultas_id
@@ -578,25 +724,25 @@ async function getAllResearchByFakultasName (req, res) {
       }
     }
 
-    // Fetch research based on fakultas_id and optional year filter
-    const { count, rows: researchs } = await research.findAndCountAll({
+    // Fetch researchs based on fakultas_id and optional year filter
+    const { count, rows: research } = await researchs.findAndCountAll({
       where: whereCondition,
       order: [['createdAt', 'DESC']], // Optional: default sorting
       limit: pageSize,
       offset: (page - 1) * pageSize,
       include: [
-        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+        { model: dosen, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] }
       ]
     })
 
     res.status(200).json({
-      message: `Research for Fakultas ${fakultasId} retrieved successfully`,
+      message: `research for Fakultas ${fakultasId} retrieved successfully`,
       total_count: count,
       total_pages: Math.ceil(count / pageSize),
       current_page: page,
-      data: researchs
+      data: research
     })
   } catch (error) {
     console.error(error)
@@ -605,8 +751,8 @@ async function getAllResearchByFakultasName (req, res) {
 }
 
 async function getAllResearchByProdiName (req, res) {
-  const user_id = req.user.user_id
-  const role = req.user.role
+  const user_id = req.users.user_id
+  const role = req.users.role
 
   try {
     // Check if the role is 'fakultas'
@@ -614,13 +760,13 @@ async function getAllResearchByProdiName (req, res) {
       return res.status(403).json({ message: 'Access denied', data: null })
     }
 
-    // Fetch user details to get fakultas_id
-    const prodiUser = await prodis.findOne({ where: { user_id: user_id } })
+    // Fetch users details to get fakultas_id
+    const prodiUser = await prodi.findOne({ where: { user_id: user_id } })
 
     if (!prodiUser) {
       return res
         .status(404)
-        .json({ message: 'Fakultas user not found', data: null })
+        .json({ message: 'Fakultas users not found', data: null })
     }
 
     const prodiId = prodiUser.prodi_id
@@ -644,15 +790,15 @@ async function getAllResearchByProdiName (req, res) {
       }
     }
 
-    const { count, rows: researchs } = await research.findAndCountAll({
+    const { count, rows: research } = await researchs.findAndCountAll({
       where: whereCondition,
       order: [['createdAt', 'DESC']], // Optional: default sorting
       limit: pageSize,
       offset: (page - 1) * pageSize,
       include: [
-        { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+        { model: dosen, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] }
       ]
     })
 
@@ -661,7 +807,7 @@ async function getAllResearchByProdiName (req, res) {
       total_count: count,
       total_pages: Math.ceil(count / pageSize),
       current_page: page,
-      data: researchs
+      data: research
     })
   } catch (error) {
     console.error(error)
@@ -671,30 +817,30 @@ async function getAllResearchByProdiName (req, res) {
 
 const getResearchStatusCountByProdi = async (req, res) => {
   try {
-    const user_id = req.user.user_id
-    const role = req.user.role
+    const user_id = req.users.user_id
+    const role = req.users.role
 
-    // Pastikan role user adalah 'prodi'
+    // Pastikan role users adalah 'prodi'
     if (role !== 'prodi') {
       return res.status(403).json({ message: 'Access denied' })
     }
 
     // Ambil data prodi berdasarkan user_id
-    const prodiUser = await prodis.findOne({ where: { user_id: user_id } })
+    const prodiUser = await prodi.findOne({ where: { user_id: user_id } })
     if (!prodiUser) {
-      return res.status(404).json({ message: 'Prodi user not found' })
+      return res.status(404).json({ message: 'Prodi users not found' })
     }
 
     const prodiId = prodiUser.prodi_id
 
     // Hitung jumlah final projects berdasarkan status dan prodi_id
-    const pendingCount = await research.count({
+    const pendingCount = await researchs.count({
       where: { status: 'pending', prodi_id: prodiId }
     })
-    const approvedCount = await research.count({
+    const approvedCount = await researchs.count({
       where: { status: 'approved', prodi_id: prodiId }
     })
-    const rejectedCount = await research.count({
+    const rejectedCount = await researchs.count({
       where: { status: 'rejected', prodi_id: prodiId }
     })
 
@@ -720,7 +866,7 @@ const getResearchStatusCountByProdi = async (req, res) => {
 async function getAllResearchsTotal (req, res) {
   try {
     // Fetch all unique fakultas_id from finalprojects
-    const uniqueFakultasIds = await research.findAll({
+    const uniqueFakultasIds = await researchs.findAll({
       attributes: ['fakultas_id'],
       group: ['fakultas_id'],
       raw: true
@@ -747,15 +893,15 @@ async function getAllResearchsTotal (req, res) {
         }
 
         // Fetch final projects based on fakultas_id and optional year filter
-        const { count, rows: researchs } = await research.findAndCountAll({
+        const { count, rows: research } = await researchs.findAndCountAll({
           where: whereCondition,
           order: [['createdAt', 'DESC']], // Optional: default sorting
           limit: pageSize,
           offset: (page - 1) * pageSize,
           include: [
-            { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+            { model: dosen, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
             { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-            { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+            { model: prodi, attributes: ['prodi_id', 'nama_prodi'] }
           ]
         })
 
@@ -764,7 +910,7 @@ async function getAllResearchsTotal (req, res) {
           total_count: count,
           total_pages: Math.ceil(count / pageSize),
           current_page: page,
-          data: researchs
+          data: research
         }
       })
     )
@@ -780,7 +926,7 @@ async function getAllResearchsTotal (req, res) {
   }
 }
 
-paginate.paginate(research)
+paginate.paginate(researchs)
 
 module.exports = {
   createResearch,

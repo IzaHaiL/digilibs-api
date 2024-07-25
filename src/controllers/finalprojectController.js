@@ -1,86 +1,149 @@
 const {
   finalprojects,
-  research,
-  mahasiswas,
-  dosens,
-  prodis,
+  researchs,
+  mahasiswa,
+  dosen,
+  prodi,
   fakultas,
-  lppms,
-  admin,
-  sequelize
+  kategori,
+  berkas,
 } = require('../databases/models')
 const { nanoid } = require('nanoid')
 const { Op } = require('sequelize')
 const Validator = require('fastest-validator')
 const v = new Validator()
 const paginate = require('sequelize-paginate')
+const { uploadFileToSpace , deleteFileFromSpace } = require('../middlewares/multer')
 
-async function createFinalProjects (req, res, next) {
+
+async function createFinalProjects(req, res, next) {
   try {
-    const mahasiswa = await mahasiswas.findOne({
-      where: { user_id: req.user.user_id }
-    })
+    console.log('Received kontributor:', req.body.kontributor);
+    console.log('Received kategori:', req.body.kategori);
 
-    if (!mahasiswa) {
+
+    const Mahasiswa = await mahasiswa.findOne({
+      where: { user_id: req.users.user_id }
+    });
+
+    if (!Mahasiswa) {
       return res.status(404).json({
         message: 'Mahasiswa data not found for the current user'
-      })
+      });
     }
+
+    // Data for the FinalProjects model
     const data = {
-      user_id: req.user.user_id,
-      mahasiswa_id: mahasiswa.mahasiswa_id,
+      user_id: req.users.user_id,
+      mahasiswa_id: Mahasiswa.mahasiswa_id,
       title: req.body.title,
       title_eng: req.body.title_eng,
       abstract: req.body.abstract,
       abstract_eng: req.body.abstract_eng,
-      kontributor: req.body.kontributor,
-      fakultas_id: mahasiswa.fakultas_id,
-      prodi_id: mahasiswa.prodi_id,
+      fakultas_id: Mahasiswa.fakultas_id,
+      prodi_id: Mahasiswa.prodi_id,
       url_finalprojects: req.body.url_finalprojects,
-      berkas_finalprojects: req.body.berkas_finalprojects,
       submissionDate: req.body.submissionDate,
-      aprovaldate: req.body.aprovaldate,
+      approvalDate: req.body.approvalDate,
       createdAt: new Date(),
       updatedAt: new Date()
-    }
+    };
+
+    // Schema for validation
     const schema = {
-      title: { type: 'string', min: 5, max: 255, optional: false },
-      abstract: { type: 'string', optional: false },
-      kontributor: { type: 'string', optional: true },
-      fakultas_id: { type: 'string', optional: false },
-      prodi_id: { type: 'string', optional: false },
-      url_finalprnpojects: { type: 'string', optional: true },
-      berkas_finalprojects: { type: 'string', optional: true },
-      submissionDate: { type: 'date', optional: true }
-    }
-    const validationResult = v.validate(data, schema)
+      title: { type: 'string', min: 1, max: 255, optional: false },
+      title_eng: { type: 'string', min: 1, max: 255, optional: false },
+      abstract: { type: 'string', min: 1, max: 2000, optional: false },
+      abstract_eng: { type: 'string', min: 1, max: 2000, optional: false },
+      kategori: { type: 'array', optional: true },
+      url_finalprojects: { type: 'string', max: 500, optional: true },
+      submissionDate: { type: 'date', optional: true }, 
+      approvalDate: { type: 'date', optional: true },
+      user_id: { type: 'string', min: 1, max: 20, optional: true },
+      mahasiswa_id: { type: 'string', min: 1, max: 20, optional: true },
+      prodi_id: { type: 'string', min: 1, max: 50, optional: true },
+      fakultas_id: { type: 'string', min: 1, max: 50, optional: true },
+      kontributor: { type: 'array', optional: true }, // Updated to kontributor
+      kategori: { type: 'array', optional: true } // Updated to kategori
+    };
+
+    // Validate the data
+    const validationResult = v.validate(data, schema);
     if (validationResult !== true) {
       return res.status(400).json({
         message: 'Validation Failed',
         data: validationResult
-      })
+      });
     }
-    const result = await finalprojects.create(data)
+
+    // Create the FinalProjects entry
+    const finalProject = await finalprojects.create(data);
+
+    // Handle file uploads to cloud storage
+    const files = req.files; // Assuming you have configured multer to handle multiple files
+    if (files && files.length > 0) {
+      const fileRecords = await Promise.all(
+        files.map(async (file) => {
+          const fileLocation = await uploadFileToSpace(file.buffer, file.originalname, 'finalprojects');
+          return await berkas.create({
+            url_berkas: fileLocation,
+            project_id: finalProject.project_id
+          });
+        })
+      );
+      finalProject.files = fileRecords; // Attach file records to the final project
+    }
+
+    // Handle categories association
+    if (req.body.kategori && Array.isArray(req.body.kategori)) {
+      const categories = req.body.kategori;
+
+      // Find all category records
+      const categoryRecords = await kategori.findAll({
+        where: {
+          kategori_id: categories
+        }
+      });
+
+      // Associate the FinalProject with the categories
+      await finalProject.addKategori(categoryRecords);
+    }
+
+    // Handle kontributors association
+    if (req.body.kontributor && Array.isArray(req.body.kontributor)) {
+      const kontributors = req.body.kontributor;
+
+      // Find all kontributor records
+      const kontributorRecords = await dosen.findAll({
+        where: {
+          dosen_id: kontributors
+        }
+      });
+
+      // Associate the FinalProject with the kontributors
+      await finalProject.addKontributor(kontributorRecords); // Use the updated alias
+    }
+
     res.status(201).json({
       message: 'Final Project Created Successfully',
-      data: result
-    })
+      data: finalProject
+    });
   } catch (err) {
-    console.error(err)
+    console.error(err);
     res.status(500).json({
       message: 'Create Final Project Failed',
       data: err
-    })
+    });
   }
 }
 
-async function getAllFinalProjects (req, res) {
+async function getAllFinalProjects(req, res) {
   try {
-    const page = parseInt(req.query.page, 10) || 1
-    const pageSize = parseInt(req.query.pageSize, 10) || 10
+    const page = parseInt(req.query.page, 10) || 1;
+    const pageSize = parseInt(req.query.pageSize, 10) || 10;
     const year = req.query.year ? parseInt(req.query.year, 10) : null;
 
-    // Prepare conditions for where clause
+    // Prepare conditions for the where clause
     let whereCondition = {};
 
     if (year) {
@@ -90,38 +153,63 @@ async function getAllFinalProjects (req, res) {
       };
     }
 
-    const result = await finalprojects.paginate({
+    // Paginate and include related models
+    const result = await finalprojects.findAndCountAll({
       where: whereCondition,
-      page: page,
-      paginate: pageSize,
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
       include: [
         {
-          model: mahasiswas,
+          model: mahasiswa,
           attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim']
         },
-        { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
-      ]
-    })
+        {
+          model: fakultas,
+          attributes: ['fakultas_id', 'nama_fakultas']
+        },
+        {
+          model: prodi,
+          attributes: ['prodi_id', 'nama_prodi']
+        },
+        {
+          model: berkas,
+          attributes: ['berkas_id', 'url_berkas'],
+          as: 'berkas'
+        },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
 
     const response = {
       message: 'Success fetch final projects',
-      total_count: result.total,
-      total_pages: result.pages,
-      current_page: result.page,
-      data: result.docs
-    }
+      total_count: result.count,
+      total_pages: Math.ceil(result.count / pageSize),
+      current_page: page,
+      data: result.rows
+    };
 
-    res.send(response)
+    res.send(response);
   } catch (err) {
-    console.error('Error:', err)
-    res.status(500).send({ message: 'Internal server error' })
-  } 
+    console.error('Error:', err);
+    res.status(500).send({ message: 'Internal server error' });
+  }
 }
 
 async function getAllFinalProjectsByUserId (req, res, next) {
   try {
-    const userIdFromToken = req.user.user_id // Mengambil user_id dari JWT
+    const userIdFromToken = req.users.user_id // Mengambil user_id dari JWT
 
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
@@ -132,12 +220,30 @@ async function getAllFinalProjectsByUserId (req, res, next) {
       offset: (page - 1) * pageSize,
       include: [
         {
-          model: mahasiswas,
+          model: mahasiswa,
           attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim']
         },
-        { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
-      ]
+        {
+          model: fakultas,
+          attributes: ['fakultas_id', 'nama_fakultas']
+        },
+        {
+          model: prodi,
+          attributes: ['prodi_id', 'nama_prodi']
+        },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
+      ],
     })
 
     if (result.count === 0) {
@@ -148,7 +254,7 @@ async function getAllFinalProjectsByUserId (req, res, next) {
     }
 
     const response = {
-      message: 'Success fetching final projects by user ID',
+      message: 'Success fetching final projects by users ID',
       total_count: result.count,
       total_pages: Math.ceil(result.count / pageSize),
       current_page: page,
@@ -172,12 +278,35 @@ async function getFinalProjectsById (req, res, next) {
     const finalProject = await finalprojects.findByPk(finalProjectId, {
       include: [
         {
-          model: mahasiswas,
+          model: mahasiswa,
           attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim']
         },
-        { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
-      ]
+        {
+          model: fakultas,
+          attributes: ['fakultas_id', 'nama_fakultas']
+        },
+        {
+          model: prodi,
+          attributes: ['prodi_id', 'nama_prodi']
+        },
+        {
+          model: berkas,
+          attributes: ['berkas_id', 'url_berkas'],
+          as: 'berkas'
+        },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
+      ],
     })
 
     if (!finalProject) {
@@ -199,92 +328,114 @@ async function getFinalProjectsById (req, res, next) {
   }
 }
 
-async function updateFinalProjects (req, res, next) {
+async function updateFinalProjects(req, res, next) {
+  console.log('files:', req.files);
   try {
-    const { project_id } = req.params
+    const finalProject = await finalprojects.findByPk(req.params.project_id);
 
-    // Periksa apakah final project dengan project_id yang diberikan ada di database
-    const existingProject = await finalprojects.findByPk(project_id)
-    if (!existingProject) {
+    if (!finalProject) {
       return res.status(404).json({
         message: 'Final Project not found'
-      })
+      });
     }
 
-    // Dapatkan data Mahasiswa dari database berdasarkan user_id dari JWT
-    const mahasiswa = await mahasiswas.findOne({
-      where: { user_id: req.user.user_id }
-    })
+    // Prepare data for update
+    const data = {};
+    if (req.body.title) data.title = req.body.title;
+    if (req.body.title_eng) data.title_eng = req.body.title_eng;
+    if (req.body.abstract) data.abstract = req.body.abstract;
+    if (req.body.abstract_eng) data.abstract_eng = req.body.abstract_eng;
+    if (req.body.url_finalprojects) data.url_finalprojects = req.body.url_finalprojects;
+    if (req.body.submissionDate) data.submissionDate = req.body.submissionDate;
+    if (req.body.approvalDate) data.approvalDate = req.body.approvalDate;
+    data.updatedAt = new Date();
 
-    if (!mahasiswa) {
-      return res.status(404).json({
-        message: 'Mahasiswa data not found for the current user'
-      })
+    // Update the project only if there are changes
+    if (Object.keys(data).length > 1) {
+      await finalProject.update(data);
     }
 
-    // Konfigurasi data yang akan diupdate
-    const dataToUpdate = {
-      title: req.body.title || existingProject.title,
-      title_eng: req.body.title_eng || existingProject.title_eng,
-      abstract: req.body.abstract || existingProject.abstract,
-      abstract_eng: req.body.abstract_eng || existingProject.abstract_eng,
-      penulis: req.body.penulis || mahasiswa.nama_mahasiswa,
-      nim: req.body.nim || mahasiswa.nim,
-      kontributor: req.body.kontributor || existingProject.kontributor,
-      fakultas_id: req.body.fakultas_id || mahasiswa.fakultas_id,
-      prodi_id: req.body.prodi_id || mahasiswa.prodi_id,
-      url_finalprojects:
-        req.body.url_finalprojects || existingProject.url_finalprojects,
-      berkas_finalprojects:
-        req.body.berkas_finalprojects || existingProject.berkas_finalprojects,
-      submissionDate: req.body.submissionDate || existingProject.submissionDate,
-      aprovaldate: req.body.aprovaldate || existingProject.aprovaldate,
-      updatedAt: new Date()
+    // Handle file uploads to cloud storage
+    if (req.files && req.files.length > 0) {
+      // Add new files
+      const fileRecords = await Promise.all(
+        req.files.map(async (file) => {
+          const fileLocation = await uploadFileToSpace(file.buffer, file.originalname, 'finalprojects');
+          return await berkas.create({
+            url_berkas: fileLocation,
+            project_id: finalProject.project_id
+          });
+        })
+      );
+      finalProject.files = finalProject.files ? [...finalProject.files, ...fileRecords] : fileRecords; // Ensure finalProject.files is an array
     }
 
-    // Validasi data yang akan diupdate
-    const schema = {
-      title: { type: 'string', min: 5, max: 255, optional: true },
-      abstract: { type: 'string', optional: true },
-      penulis: { type: 'string', min: 5, max: 50, optional: true },
-      kontributor: { type: 'string', optional: true },
-      fakultas_id: { type: 'string', optional: true },
-      prodi_id: { type: 'string', optional: true },
-      url_finalprojects: { type: 'string', optional: true },
-      berkas_finalprojects: { type: 'string', optional: true },
-      submissionDate: { type: 'date', optional: true }
+    // Handle file deletions
+    if (req.body.deletedFileIds && req.body.deletedFileIds.length > 0) {
+      const deletedFileIds = req.body.deletedFileIds.split(',');
+
+      console.log('Files to be deleted:', deletedFileIds); // Log files to be deleted
+
+      // Find and delete files from cloud storage and database
+      const oldFiles = await berkas.findAll({
+        where: { project_id: finalProject.project_id, berkas_id: deletedFileIds }
+      });
+
+      oldFiles.forEach(async (file) => {
+        try {
+          await deleteFileFromSpace(file.url_berkas);
+          await file.destroy();
+          console.log(`Deleted file: ${file.url_berkas}`); // Log each deleted file
+        } catch (err) {
+          console.error(`Error deleting file ${file.url_berkas}:`, err);
+        }
+      });
     }
 
-    const validationResult = v.validate(dataToUpdate, schema)
-
-    if (validationResult !== true) {
-      return res.status(400).json({
-        message: 'Validation Failed',
-        data: validationResult
-      })
+    // Handle categories association
+    let categories = req.body.kategori;
+    if (categories && !Array.isArray(categories)) {
+      categories = categories.split(',');
     }
 
-    // Lakukan update data final project
-    await finalprojects.update(dataToUpdate, {
-      where: { project_id: project_id }
-    })
+    if (categories && Array.isArray(categories)) {
+      const categoryRecords = await kategori.findAll({
+        where: {
+          kategori_id: categories
+        }
+      });
 
-    // Ambil data final project yang telah diupdate
-    const updatedProject = await finalprojects.findByPk(project_id)
+      await finalProject.setKategori(categoryRecords);
+    }
+
+    // Handle kontributors association
+    let kontributors = req.body.kontributor;
+    if (kontributors && !Array.isArray(kontributors)) {
+      kontributors = kontributors.split(',');
+    }
+
+    if (kontributors && Array.isArray(kontributors)) {
+      const kontributorRecords = await dosen.findAll({
+        where: {
+          dosen_id: kontributors
+        }
+      });
+
+      await finalProject.setKontributor(kontributorRecords);
+    }
 
     res.status(200).json({
       message: 'Final Project Updated Successfully',
-      data: updatedProject
-    })
+      data: finalProject
+    });
   } catch (err) {
-    console.error(err)
+    console.error(err);
     res.status(500).json({
       message: 'Update Final Project Failed',
-      error: err.message
-    })
+      data: err
+    });
   }
 }
-
 async function deleteFinalProjects (req, res, next) {
   try {
     const finalProjectId = req.params.id
@@ -323,11 +474,23 @@ async function getDetailProjectsPublicById (req, res, next) {
     const project = await finalprojects.findByPk(projectId, {
       include: [
         {
-          model: mahasiswas,
+          model: mahasiswa,
           attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim']
         },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        { 
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
       ]
     })
 
@@ -365,31 +528,44 @@ async function getAllFinalProjectsPublic (req, res, next) {
     const result = await finalprojects.findAndCountAll({
       include: [
         {
-          model: mahasiswas,
+          model: mahasiswa,
           attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim']
         },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
+        
       ],
       limit: pageSize,
       offset: (page - 1) * pageSize,
       order: [['total_views', 'DESC']]
     })
 
-    // Exclude the 'berkas_finalprojects' attribute from each final project
     const finalProjectsData = result.rows.map(finalProject => {
-      const { berkas_finalprojects, ...finalProjectData } =
-        finalProject.toJSON()
-      return finalProjectData
-    })
-
+      // Convert the finalProject instance to JSON
+      const finalProjectData = finalProject.toJSON();
+      // Return the full data including related entities
+      return finalProjectData;
+    });
+    
     const response = {
       message: 'Success fetch final projects',
       total_count: result.count,
       total_pages: Math.ceil(result.count / pageSize),
       current_page: page,
       data: finalProjectsData
-    }
+    };
 
     res.send(response)
   } catch (err) {
@@ -421,7 +597,7 @@ async function searchProjectPublic (req, res, next) {
       }
     }
 
-    // Query for research model
+    // Query for researchs model
     if (searchTerm) {
       researchQuery = {
         [Op.or]: [
@@ -440,22 +616,48 @@ async function searchProjectPublic (req, res, next) {
         order: [['title', 'ASC']],
         include: [
           {
-            model: mahasiswas,
+            model: mahasiswa,
             attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim']
           },
           { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-          { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+          { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+          {
+            model: kategori,
+            attributes: ['kategori_id', 'nama_kategori'],
+            through: {attributes: [] },
+            as: 'kategori'
+          },
+          {
+            model: dosen,
+            attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+            through: {attributes: [] },
+            as: 'kontributor'
+          }
+          
         ]
       }),
-      research.findAndCountAll({
+      researchs.findAndCountAll({
         where: researchQuery,
         limit: pageSize,
         offset: (page - 1) * pageSize,
         order: [['title', 'ASC']],
         include: [
-          { model: dosens, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
+          { model: dosen, attributes: ['dosen_id', 'nama_dosen', 'nidn'] },
           { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-          { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+          { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+          {
+            model: kategori,
+            attributes: ['kategori_id', 'nama_kategori'],
+            through: {attributes: [] },
+            as: 'kategori'
+          },
+          {
+            model: dosen,
+            attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+            through: {attributes: [] },
+            as: 'kontributor'
+          }
+
         ]
       })
     ])
@@ -471,7 +673,7 @@ async function searchProjectPublic (req, res, next) {
     const combinedData = [...finalProjectsData, ...researchResult.rows]
 
     const response = {
-      message: 'Success fetch final projects and research by name',
+      message: 'Success fetch final projects and researchs by name',
       total_count: finalProjectsResult.count + researchResult.count,
       total_pages: Math.ceil(
         (finalProjectsResult.count + researchResult.count) / pageSize
@@ -484,7 +686,7 @@ async function searchProjectPublic (req, res, next) {
   } catch (err) {
     console.error(err)
     res.status(500).json({
-      message: 'Failed to fetch final projects and research by name',
+      message: 'Failed to fetch final projects and researchs by name',
       error: err.toString()
     })
   }
@@ -528,7 +730,6 @@ async function advancedSearchProjectsPublic (req, res, next) {
             : {},
           title ? { title: { [Op.like]: `%${title}%` } } : {},
           penulis ? { penulis: { [Op.like]: `%${penulis}%` } } : {},
-          contributor ? { kontributor: { [Op.like]: `%${contributor}%` } } : {},
           kataKunci
             ? {
                 [Op.or]: [
@@ -564,11 +765,11 @@ async function advancedSearchProjectsPublic (req, res, next) {
         order: [['title', 'ASC']],
         include: [
           {
-            model: mahasiswas,
+            model: mahasiswa,
             attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim']
           },
           { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-          { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+          { model: prodi, attributes: ['prodi_id', 'nama_prodi'] }
         ]
       })
     }
@@ -581,11 +782,11 @@ async function advancedSearchProjectsPublic (req, res, next) {
         order: [['title', 'ASC']],
         include: [
           {
-            model: mahasiswas,
+            model: mahasiswa,
             attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim']
           },
           { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-          { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+          { model: prodi, attributes: ['prodi_id', 'nama_prodi'] }
         ]
       })
     }
@@ -806,8 +1007,8 @@ const updateStatusProject = async (req, res) => {
 }
 
 async function getAllFinalProjectsByFakultasName(req, res) {
-  const user_id = req.user.user_id;
-  const role = req.user.role;
+  const user_id = req.users.user_id;
+  const role = req.users.role;
 
   try {
     // Check if the role is 'fakultas'
@@ -815,11 +1016,11 @@ async function getAllFinalProjectsByFakultasName(req, res) {
       return res.status(403).json({ message: 'Access denied', data: null });
     }
 
-    // Fetch user details to get fakultas_id
+    // Fetch users details to get fakultas_id
     const fakultasUser = await fakultas.findOne({ where: { user_id: user_id } });
 
     if (!fakultasUser) {
-      return res.status(404).json({ message: 'Fakultas user not found', data: null });
+      return res.status(404).json({ message: 'Fakultas users not found', data: null });
     }
 
     const fakultasId = fakultasUser.fakultas_id;
@@ -845,9 +1046,21 @@ async function getAllFinalProjectsByFakultasName(req, res) {
       limit: pageSize,
       offset: (page - 1) * pageSize,
       include: [
-        { model: mahasiswas, attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim'] },
+        { model: mahasiswa, attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
       ]
     });
 
@@ -865,8 +1078,8 @@ async function getAllFinalProjectsByFakultasName(req, res) {
 }
 
 async function getAllFinalProjectsByProdiName(req, res) {
-  const user_id = req.user.user_id;
-  const role = req.user.role;
+  const user_id = req.users.user_id;
+  const role = req.users.role;
 
   try {
     // Check if the role is 'fakultas'
@@ -874,11 +1087,11 @@ async function getAllFinalProjectsByProdiName(req, res) {
       return res.status(403).json({ message: 'Access denied', data: null });
     }
 
-    // Fetch user details to get fakultas_id
-    const prodiUser = await prodis.findOne({ where: { user_id: user_id } });
+    // Fetch users details to get fakultas_id
+    const prodiUser = await prodi.findOne({ where: { user_id: user_id } });
 
     if (!prodiUser) {
-      return res.status(404).json({ message: 'Fakultas user not found', data: null });
+      return res.status(404).json({ message: 'Fakultas users not found', data: null });
     }
 
     const prodiId = prodiUser.prodi_id;
@@ -909,9 +1122,22 @@ async function getAllFinalProjectsByProdiName(req, res) {
       limit: pageSize,
       offset: (page - 1) * pageSize,
       include: [
-        { model: mahasiswas, attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim'] },
+        { model: mahasiswa, attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim'] },
         { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-        { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+        { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+        {
+          model: kategori,
+          attributes: ['kategori_id', 'nama_kategori'],
+          through: {attributes: [] },
+          as: 'kategori'
+        },
+        {
+          model: dosen,
+          attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+          through: {attributes: [] },
+          as: 'kontributor'
+        }
+
       ]
     });
 
@@ -930,18 +1156,18 @@ async function getAllFinalProjectsByProdiName(req, res) {
 
 const getFinalProjectStatusCountByProdi = async (req, res) => {
   try {
-    const user_id = req.user.user_id;
-    const role = req.user.role;
+    const user_id = req.users.user_id;
+    const role = req.users.role;
 
-    // Pastikan role user adalah 'prodi'
+    // Pastikan role users adalah 'prodi'
     if (role !== 'prodi') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
     // Ambil data prodi berdasarkan user_id
-    const prodiUser = await prodis.findOne({ where: { user_id: user_id } });
+    const prodiUser = await prodi.findOne({ where: { user_id: user_id } });
     if (!prodiUser) {
-      return res.status(404).json({ message: 'Prodi user not found' });
+      return res.status(404).json({ message: 'Prodi users not found' });
     }
 
     const prodiId = prodiUser.prodi_id;
@@ -1012,9 +1238,21 @@ async function getAllFinalProjectsTotal(req, res) {
           limit: pageSize,
           offset: (page - 1) * pageSize,
           include: [
-            { model: mahasiswas, attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim'] },
+            { model: mahasiswa, attributes: ['mahasiswa_id', 'nama_mahasiswa', 'nim'] },
             { model: fakultas, attributes: ['fakultas_id', 'nama_fakultas'] },
-            { model: prodis, attributes: ['prodi_id', 'nama_prodi'] }
+            { model: prodi, attributes: ['prodi_id', 'nama_prodi'] },
+            {
+              model: kategori,
+              attributes: ['kategori_id', 'nama_kategori'],
+              through: {attributes: [] },
+              as: 'kategori'
+            },
+            {
+              model: dosen,
+              attributes: ['dosen_id', 'nama_dosen', 'nidn'],
+              through: {attributes: [] },
+              as: 'kontributor'
+            }
           ]
         });
 
@@ -1038,9 +1276,6 @@ async function getAllFinalProjectsTotal(req, res) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
-
-
-
 
 
 paginate.paginate(finalprojects)

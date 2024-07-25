@@ -9,12 +9,12 @@ module.exports = {
         type: Sequelize.STRING(20),
         unique: true,
       },
-      user_id: {
-        type: Sequelize.STRING(20),
-        allowNull: false,
-      },
       nama_fakultas: {
         type: Sequelize.STRING(50),
+        allowNull: false,
+      },
+      user_id: {
+        type: Sequelize.STRING(20),
         allowNull: false,
       },
       createdAt: {

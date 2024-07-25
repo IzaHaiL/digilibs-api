@@ -2,16 +2,11 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('dosens', {
+    await queryInterface.createTable('dosen', {
       dosen_id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.STRING(20),
-        unique: true,
-      },
-      user_id: {
-        type: Sequelize.STRING(20),
-        allowNull: false,
         unique: true,
       },
       nama_dosen: {
@@ -51,11 +46,16 @@ module.exports = {
         type: Sequelize.STRING(20),
         allowNull: true,
       },
-      fakultas_id: {
+      user_id: {
+        type: Sequelize.STRING(20),
+        allowNull: false,
+        unique: true,
+      },
+      prodi_id: {
         type: Sequelize.STRING(50),
         allowNull: false,
       },
-      prodi_id: {
+      fakultas_id: {
         type: Sequelize.STRING(50),
         allowNull: false,
       },
@@ -72,7 +72,7 @@ module.exports = {
     });
 
     // Adding foreign key constraints
-    await queryInterface.addConstraint('dosens', {
+    await queryInterface.addConstraint('dosen', {
       fields: ['user_id'],
       type: 'foreign key',
       name: 'fk_dosens_user_id',
@@ -84,7 +84,7 @@ module.exports = {
       onUpdate: 'cascade',
     });
 
-    await queryInterface.addConstraint('dosens', {
+    await queryInterface.addConstraint('dosen', {
       fields: ['fakultas_id'],
       type: 'foreign key',
       name: 'fk_dosens_fakultas_id',
@@ -96,12 +96,12 @@ module.exports = {
       onUpdate: 'cascade',
     });
 
-    await queryInterface.addConstraint('dosens', {
+    await queryInterface.addConstraint('dosen', {
       fields: ['prodi_id'],
       type: 'foreign key',
       name: 'fk_dosens_prodi_id',
       references: {
-        table: 'prodis',
+        table: 'prodi',
         field: 'prodi_id',
       },
       onDelete: 'restrict',
@@ -111,6 +111,6 @@ module.exports = {
 
   down: async (queryInterface, Sequelize) => {
     // Dropping the table in the down migration
-    await queryInterface.dropTable('dosens');
+    await queryInterface.dropTable('dosen');
   }
 };

@@ -5,10 +5,10 @@ const { nanoid } = require('nanoid');
 module.exports = (sequelize, DataTypes) => {
   class Prodi extends Model {
     static associate(models) {
-      Prodi.belongsTo(models.user, { foreignKey: 'user_id' });
+      Prodi.belongsTo(models.users, { foreignKey: 'user_id' });
       Prodi.belongsTo(models.fakultas, { foreignKey: 'fakultas_id' });
-      Prodi.hasMany(models.mahasiswas, { foreignKey: 'prodi_id' });
-      Prodi.hasMany(models.dosens, { foreignKey: 'prodi_id' });
+      Prodi.hasMany(models.mahasiswa, { foreignKey: 'prodi_id' });
+      Prodi.hasMany(models.dosen, { foreignKey: 'prodi_id' });
     }
   }
 
@@ -45,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: 'prodis'
+      modelName: 'prodi'
     }
   );
 

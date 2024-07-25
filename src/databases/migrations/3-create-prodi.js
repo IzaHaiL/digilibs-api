@@ -2,7 +2,7 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('prodis', {
+    await queryInterface.createTable('prodi', {
       prodi_id: {
         allowNull: false,
         primaryKey: true,
@@ -34,7 +34,7 @@ module.exports = {
     });
 
     // Add foreign key constraints
-    await queryInterface.addConstraint('prodis', {
+    await queryInterface.addConstraint('prodi', {
       fields: ['user_id'],
       type: 'foreign key',
       name: 'fk_prodis_user_id',
@@ -46,7 +46,7 @@ module.exports = {
       onUpdate: 'cascade',
     });
 
-    await queryInterface.addConstraint('prodis', {
+    await queryInterface.addConstraint('prodi', {
       fields: ['fakultas_id'],
       type: 'foreign key',
       name: 'fk_prodis_fakultas_id',
@@ -60,6 +60,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('prodis');
+    await queryInterface.dropTable('prodi');
   }
 };

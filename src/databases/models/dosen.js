@@ -5,10 +5,21 @@ const { nanoid } = require('nanoid');
 module.exports = (sequelize, DataTypes) => {
   class Dosen extends Model {
     static associate(models) {
-      Dosen.belongsTo(models.user, { foreignKey: 'user_id' });
+      Dosen.belongsTo(models.users, { foreignKey: 'user_id' });
       Dosen.belongsTo(models.fakultas, { foreignKey: 'fakultas_id' });
-      Dosen.belongsTo(models.prodis, { foreignKey: 'prodi_id' });
-      Dosen.hasMany(models.research, { foreignKey: 'dosen_id' });
+      Dosen.belongsTo(models.prodi, { foreignKey: 'prodi_id' });
+      Dosen.hasMany(models.researchs, { foreignKey: 'dosen_id' });
+      Dosen.belongsToMany(models.finalprojects, {
+        through: 'dosenfinalprojects',
+        foreignKey: 'dosen_id',
+        otherKey: 'project_id',
+      });
+      Dosen.belongsToMany(models.researchs, {
+        through: 'dosenresearchs',
+        foreignKey: 'dosen_id',
+        otherKey: 'research_id',
+      });
+      
 
     }
   }
@@ -19,11 +30,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(20),
         primaryKey: true,
         defaultValue: () => nanoid(20),
-        allowNull: false,
-        unique: true,
-      },
-      user_id: {
-        type: DataTypes.STRING(20),
         allowNull: false,
         unique: true,
       },
@@ -64,11 +70,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(20),
         allowNull: true,
       },
-      fakultas_id: {
+      user_id: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        unique: true,
+      },
+      prodi_id: {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
-      prodi_id: {
+      fakultas_id: {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
@@ -85,7 +96,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: 'dosens', // modelName harus dimulai dengan huruf besar
+      modelName: 'dosen', // modelName harus dimulai dengan huruf besar
     }
   );
 

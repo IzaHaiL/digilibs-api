@@ -6,10 +6,25 @@ module.exports = (sequelize, DataTypes) => {
   class Research extends Model {
     static associate(models) {
       // Define associations here
-      Research.belongsTo(models.user, { foreignKey: 'user_id' });
+      Research.belongsTo(models.users, { foreignKey: 'user_id' });
       Research.belongsTo(models.fakultas, { foreignKey: 'fakultas_id' });
-      Research.belongsTo(models.prodis, { foreignKey: 'prodi_id' });
-      Research.belongsTo(models.dosens, { foreignKey: 'dosen_id' });
+      Research.belongsTo(models.prodi, { foreignKey: 'prodi_id' });
+      Research.belongsTo(models.dosen, { foreignKey: 'dosen_id' });
+      Research.hasMany(models.berkas, { foreignKey: 'research_id', as: 'berkas' });
+
+      Research.belongsToMany(models.kategori, {
+        through: 'kategoriresearchs',
+        foreignKey: 'research_id',
+        as: 'kategori',
+
+        otherKey: 'kategori_id',
+      });
+      Research.belongsToMany(models.dosen, {
+        through: 'dosebresearchs',
+        as: 'kontributor',
+        foreignKey: 'research_id',
+        otherKey: 'dosen_id',
+      });
 
     }
   }
@@ -38,30 +53,18 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       abstract: {
-        type: DataTypes.STRING(500),
+        type: DataTypes.STRING(2000),
         allowNull: false,
       },
       abstract_eng: {
-        type: DataTypes.STRING(500),
+        type: DataTypes.STRING(2000),
         allowNull: false,
-      },
-      kategori: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
       },
       catatan: {
         type: DataTypes.STRING(500),
         allowNull: true,
       },
-      kontributor: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-      },
       url_research: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-      },
-      berkas_research: {
         type: DataTypes.STRING(100),
         allowNull: true,
       },
@@ -69,7 +72,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
-      approvaldate: {
+      approvalDate: {
         type: DataTypes.DATE,
         allowNull: true,
       },
@@ -104,7 +107,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: 'research',
+      modelName: 'researchs',
     }
   );
   return Research;

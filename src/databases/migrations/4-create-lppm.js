@@ -2,7 +2,7 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('lppms', {
+    await queryInterface.createTable('lppm', {
       lppm_id: {
         allowNull: false,
         primaryKey: true,
@@ -30,7 +30,7 @@ module.exports = {
     });
 
     // Add foreign key constraints
-    await queryInterface.addConstraint('lppms', {
+    await queryInterface.addConstraint('lppm', {
       fields: ['user_id'],
       type: 'foreign key',
       name: 'fk_lppms_user_id',
@@ -44,6 +44,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('lppms');
+    await queryInterface.dropTable('lppm');
   }
 };

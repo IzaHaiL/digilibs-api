@@ -1,5 +1,5 @@
 const Validator = require("fastest-validator");
-const { user } = require("../databases/models");
+const { users } = require("../databases/models");
 const indonesianBadwords  = require('indonesian-badwords');
 const badwordsArray = require('badwords/array');
 const v = new Validator();
@@ -31,8 +31,8 @@ async function validateUser(userInput) {
   }
 
   // Check for uniqueness in the database
-  const existingEmailUser = await user.findOne({ where: { email } });
-  const existingUsernameUser = await user.findOne({ where: { username } });
+  const existingEmailUser = await users.findOne({ where: { email } });
+  const existingUsernameUser = await users.findOne({ where: { username } });
 
   if (existingEmailUser) {
     return { error: "Email already exists in the database" };

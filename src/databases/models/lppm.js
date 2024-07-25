@@ -5,7 +5,7 @@ const { nanoid } = require('nanoid');
 module.exports = (sequelize, DataTypes) => {
   class LPPM extends Model {
     static associate(models) {
-      LPPM.belongsTo(models.user, { foreignKey: 'user_id' });
+      LPPM.belongsTo(models.users, { foreignKey: 'user_id' });
     }
   }
   
@@ -17,13 +17,13 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: () => nanoid(20), // Menggunakan nanoid dengan panjang 20
         allowNull: false
       },
-      user_id: {
-        type: DataTypes.STRING(20),
-        allowNull: false
-      },
       nama_lppm: {
         type: DataTypes.STRING(50),
         allowNull: false,
+      },
+      user_id: {
+        type: DataTypes.STRING(20),
+        allowNull: false
       },
       createdAt: {
         allowNull: false,
@@ -38,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: 'lppms',
+      modelName: 'lppm',
     }
   );
   

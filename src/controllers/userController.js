@@ -1,10 +1,10 @@
 const {
-  user,
-  mahasiswas,
-  dosens,
-  prodis,
+  users,
+  mahasiswa,
+  dosen,
+  prodi,
   fakultas,
-  lppms,
+  lppm,
   admin,
   sequelize
 } = require('../databases/models')
@@ -39,15 +39,15 @@ async function signUp (req, res) {
   }
 
   try {
-    const existingUser = await user.findOne({ where: { email } })
+    const existingUser = await users.findOne({ where: { email } })
     if (existingUser) {
       return res
         .status(404)
-        .json({ error: 'User with this email already exists' })
+        .json({ error: 'users with this email already exists' })
     }
     const trimmedPassword = password.trim()
     const hashedPassword = await bcrypt.hash(trimmedPassword, 10)
-    const newUser = await user.create({
+    const newUser = await users.create({
       username,
       email,
       role: 'admin',
@@ -58,7 +58,7 @@ async function signUp (req, res) {
     const accessToken = generateAccessToken(newUser)
 
     return res.status(200).json({
-      message: `Register user with username ${username} Success`,
+      message: `Register users with username ${username} Success`,
       accessToken,
       data: newUser
     })
@@ -79,17 +79,17 @@ async function signIn (req, res) {
   }
 
   try {
-    const foundUser = await user.findOne({ where: { username } })
+    const foundUser = await users.findOne({ where: { username } })
 
     if (!foundUser) {
-      return res.status(404).json({ message: 'User not found' })
+      return res.status(404).json({ message: 'users not found' })
     }
 
-    const userDeleted = await isUserDeleted(foundUser.user_id) // Assuming you have a function to check if user is deleted
+    const userDeleted = await isUserDeleted(foundUser.user_id) // Assuming you have a function to check if users is deleted
     if (userDeleted) {
       return res
         .status(403)
-        .json({ error: 'Forbidden: User account has been deleted' })
+        .json({ error: 'Forbidden: users account has been deleted' })
     }
 
     const passwordMatch = await bcrypt.compare(password, foundUser.password)
@@ -107,7 +107,7 @@ async function signIn (req, res) {
     }
 
     return res.status(200).json({
-      message: `Login User ID ${foundUser.user_id} Success`,
+      message: `Login users ID ${foundUser.user_id} Success`,
       accessToken,
       data: userResponse
     })
@@ -131,18 +131,18 @@ async function signOut (req, res) {
         .status(401)
         .json({ error: 'Unauthorized: Token has been revoked' })
     }
-    if (req.user && req.user.user_id && req.user.username) {
-      const { user_id, username } = req.user
+    if (req.users && req.users.user_id && req.users.username) {
+      const { user_id, username } = req.users
       clearToken(token)
       res.status(200).json({
-        message: `Sign-out successful for user ID ${user_id} Username ${username}`,
+        message: `Sign-out successful for users ID ${user_id} Username ${username}`,
         user_id,
         username
       })
     } else {
       res
         .status(401)
-        .json({ error: 'Unauthorized: User information not available' })
+        .json({ error: 'Unauthorized: users information not available' })
     }
   } catch (error) {
     console.error(error)
@@ -197,21 +197,21 @@ async function createMahasiswa (req, res) {
   const t = await sequelize.transaction()
 
   try {
-    // Check if the user already exists
-    const existingUser = await user.findOne({
+    // Check if the users already exists
+    const existingUser = await users.findOne({
       where: { email },
       transaction: t
     })
     if (existingUser) {
-      await t.rollback() // Rollback transaction if user already exists
+      await t.rollback() // Rollback transaction if users already exists
       return res
         .status(400)
-        .json({ error: 'User with this email already exists' })
+        .json({ error: 'users with this email already exists' })
     }
 
-    // Create a new user record
+    // Create a new users record
     const hashedPassword = await bcrypt.hash(password.trim(), 10)
-    const newUser = await user.create(
+    const newUser = await users.create(
       {
         username,
         email,
@@ -223,7 +223,7 @@ async function createMahasiswa (req, res) {
     )
 
     // Create a new mahasiswa record
-    const newMahasiswa = await mahasiswas.create(
+    const newMahasiswa = await mahasiswa.create(
       {
         user_id: newUser.user_id,
         nama_mahasiswa,
@@ -302,21 +302,21 @@ async function createDosen (req, res) {
   const t = await sequelize.transaction()
 
   try {
-    // Check if the user already exists
-    const existingUser = await user.findOne({
+    // Check if the users already exists
+    const existingUser = await users.findOne({
       where: { email },
       transaction: t
     })
     if (existingUser) {
-      await t.rollback() // Rollback transaction if user already exists
+      await t.rollback() // Rollback transaction if users already exists
       return res
         .status(400)
-        .json({ error: 'User with this email already exists' })
+        .json({ error: 'users with this email already exists' })
     }
 
-    // Create a new user record
+    // Create a new users record
     const hashedPassword = await bcrypt.hash(password.trim(), 10)
-    const newUser = await user.create(
+    const newUser = await users.create(
       {
         username,
         email,
@@ -328,7 +328,7 @@ async function createDosen (req, res) {
     )
 
     // Create a new dosen record
-    const responseData = await dosens.create(
+    const responseData = await dosen.create(
       {
         user_id: newUser.user_id,
         nama_dosen,
@@ -384,21 +384,21 @@ async function createProdi (req, res) {
   const t = await sequelize.transaction()
 
   try {
-    // Check if the user already exists
-    const existingUser = await user.findOne({
+    // Check if the users already exists
+    const existingUser = await users.findOne({
       where: { email },
       transaction: t
     })
     if (existingUser) {
-      await t.rollback() // Rollback transaction if user already exists
+      await t.rollback() // Rollback transaction if users already exists
       return res
         .status(400)
-        .json({ error: 'User with this email already exists' })
+        .json({ error: 'users with this email already exists' })
     }
 
-    // Create a new user record
+    // Create a new users record
     const hashedPassword = await bcrypt.hash(password.trim(), 10)
-    const newUser = await user.create(
+    const newUser = await users.create(
       {
         username,
         email,
@@ -410,7 +410,7 @@ async function createProdi (req, res) {
     )
 
     // Create a new prodi record
-    const newProdi = await prodis.create(
+    const newProdi = await prodi.create(
       {
         user_id: newUser.user_id,
         nama_prodi,
@@ -457,21 +457,21 @@ async function createFakultas (req, res) {
   const t = await sequelize.transaction()
 
   try {
-    // Check if the user already exists
-    const existingUser = await user.findOne({
+    // Check if the users already exists
+    const existingUser = await users.findOne({
       where: { email },
       transaction: t
     })
     if (existingUser) {
-      await t.rollback() // Rollback transaction if user already exists
+      await t.rollback() // Rollback transaction if users already exists
       return res
         .status(400)
-        .json({ error: 'User with this email already exists' })
+        .json({ error: 'users with this email already exists' })
     }
 
-    // Create a new user record
+    // Create a new users record
     const hashedPassword = await bcrypt.hash(password.trim(), 10)
-    const newUser = await user.create(
+    const newUser = await users.create(
       {
         username,
         email,
@@ -530,21 +530,21 @@ async function createLPPM (req, res) {
   const t = await sequelize.transaction()
 
   try {
-    // Check if the user already exists
-    const existingUser = await user.findOne({
+    // Check if the users already exists
+    const existingUser = await users.findOne({
       where: { email },
       transaction: t
     })
     if (existingUser) {
-      await t.rollback() // Rollback transaction if user already exists
+      await t.rollback() // Rollback transaction if users already exists
       return res
         .status(400)
-        .json({ error: 'User with this email already exists' })
+        .json({ error: 'users with this email already exists' })
     }
 
-    // Create a new user record
+    // Create a new users record
     const hashedPassword = await bcrypt.hash(password.trim(), 10)
-    const newUser = await user.create(
+    const newUser = await users.create(
       {
         username,
         email,
@@ -556,7 +556,7 @@ async function createLPPM (req, res) {
     )
 
     // Create a new lppm record
-    const newLPPM = await lppms.create(
+    const newLPPM = await lppm.create(
       {
         user_id: newUser.user_id,
         nama_lppm
@@ -582,14 +582,14 @@ async function createAdmin (req, res) {
   const { username, email, password } = req.body
 
   try {
-    const existingUser = await user.findOne({ where: { email } })
+    const existingUser = await users.findOne({ where: { email } })
     if (existingUser) {
       return res
         .status(400)
-        .json({ error: 'User with this email already exists' })
+        .json({ error: 'users with this email already exists' })
     }
 
-    const newUser = await user.create({
+    const newUser = await users.create({
       username,
       email,
       password: await bcrypt.hash(password.trim(), 10),
@@ -613,7 +613,7 @@ async function createAdmin (req, res) {
 
 async function getUsers (req, res) {
   try {
-    const users = await user.findAll()
+    const users = await users.findAll()
     res.status(200).json(users)
   } catch (error) {
     console.error(error)
@@ -622,13 +622,13 @@ async function getUsers (req, res) {
 }
 
 async function getUserById (req, res) {
-  const user_id = req.user.user_id
-  const role = req.user.role
+  const user_id = req.users.user_id
+  const role = req.users.role
 
   try {
-    const users = await user.findByPk(user_id)
-    if (!users) {
-      return res.status(404).json({ message: 'User not found', data: null })
+    const user = await users.findByPk(user_id)
+    if (!user) {
+      return res.status(404).json({ message: 'users not found', data: null })
     }
 
     let userData
@@ -637,29 +637,29 @@ async function getUserById (req, res) {
 
     switch (role) {
       case 'mahasiswa':
-        userData = await mahasiswas.findOne({
+        userData = await mahasiswa.findOne({
           where: {
             user_id: user_id
           }
         })
         if (userData) {
           fakultasData = await fakultas.findByPk(userData.fakultas_id)
-          prodiData = await prodis.findByPk(userData.prodi_id)
+          prodiData = await prodi.findByPk(userData.prodi_id)
         }
         break
       case 'dosen':
-        userData = await dosens.findOne({
+        userData = await dosen.findOne({
           where: {
             user_id: user_id
           }
         })
         if (userData) {
           fakultasData = await fakultas.findByPk(userData.fakultas_id)
-          prodiData = await prodis.findByPk(userData.prodi_id)
+          prodiData = await prodi.findByPk(userData.prodi_id)
         }
         break
       case 'prodi':
-        userData = await prodis.findOne({
+        userData = await prodi.findOne({
           where: {
             user_id: user_id
           }
@@ -673,7 +673,7 @@ async function getUserById (req, res) {
         })
         break
       case 'lppm':
-        userData = await lppms.findOne({
+        userData = await lppm.findOne({
           where: {
             user_id: user_id
           }
@@ -693,13 +693,12 @@ async function getUserById (req, res) {
 
     // Siapkan respons dengan informasi pengguna dan data sesuai dengan peran
     const responseData = {
-      user_id: users.user_id,
-      username: users.username,
-      email: users.email,
-      role: users.role,
-      isActive: users.isActive,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
       data: userData || null,
       fakultas: fakultasData || null,
       prodi: prodiData || null
@@ -719,15 +718,15 @@ async function deleteUser (req, res) {
   const { id } = req.params
 
   try {
-    const foundUser = await user.findByPk(id) // Gunakan nama variabel yang berbeda
+    const foundUser = await users.findByPk(id) // Gunakan nama variabel yang berbeda
     if (!foundUser) {
-      return res.status(404).json({ error: 'User not found' })
+      return res.status(404).json({ error: 'users not found' })
     }
 
     foundUser.isActive = false // Soft delete dengan mengatur isActive menjadi false
     await foundUser.save()
 
-    res.status(200).json({ message: 'User soft deleted successfully' })
+    res.status(200).json({ message: 'users soft deleted successfully' })
   } catch (error) {
     console.error(error)
     res.status(500).json({ error: 'Internal Server Error' })
@@ -735,7 +734,7 @@ async function deleteUser (req, res) {
 }
 async function getUserCount (req, res) {
   try {
-    const count = await user.count()
+    const count = await users.count()
     res.status(200).json({ count })
   } catch (error) {
     console.error(error)
@@ -773,7 +772,7 @@ async function getAllProdi (req, res) {
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
 
-    const result = await prodis.findAndCountAll({
+    const result = await prodi.findAndCountAll({
       limit: pageSize,
       offset: (page - 1) * pageSize
     })
@@ -798,7 +797,7 @@ async function getAllMahasiswa (req, res) {
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
 
-    const result = await mahasiswas.findAndCountAll({
+    const result = await mahasiswa.findAndCountAll({
       limit: pageSize,
       offset: (page - 1) * pageSize
     })
@@ -822,7 +821,7 @@ async function getAllMahasiswaByProdi (req, res) {
   const { nama_prodi } = req.params
 
   try {
-    const prodi = await prodis.findOne({ where: { nama_prodi } })
+    const prodi = await prodi.findOne({ where: { nama_prodi } })
 
     if (!prodi) {
       return res.status(404).json({ error: 'Study Program not found' })
@@ -831,7 +830,7 @@ async function getAllMahasiswaByProdi (req, res) {
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
 
-    const result = await mahasiswas.findAndCountAll({
+    const result = await mahasiswa.findAndCountAll({
       where: { prodi_id: prodi.prodi_id },
       limit: pageSize,
       offset: (page - 1) * pageSize
@@ -865,7 +864,7 @@ async function getAllMahasiswaByFakultas (req, res) {
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
 
-    const result = await mahasiswas.findAndCountAll({
+    const result = await mahasiswa.findAndCountAll({
       where: { fakultas_id: fakultasData.fakultas_id },
       limit: pageSize,
       offset: (page - 1) * pageSize
@@ -890,7 +889,7 @@ async function getAllDosenByProdi (req, res) {
   const { nama_prodi } = req.params
 
   try {
-    const prodi = await prodis.findOne({ where: { nama_prodi } })
+    const prodi = await prodi.findOne({ where: { nama_prodi } })
 
     if (!prodi) {
       return res.status(404).json({ error: 'Study Program not found' })
@@ -899,7 +898,7 @@ async function getAllDosenByProdi (req, res) {
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
 
-    const result = await dosens.findAndCountAll({
+    const result = await dosen.findAndCountAll({
       where: { prodi_id: prodi.prodi_id },
       limit: pageSize,
       offset: (page - 1) * pageSize
@@ -933,7 +932,7 @@ async function getAllDosenByFakultas (req, res) {
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
 
-    const result = await dosens.findAndCountAll({
+    const result = await dosen.findAndCountAll({
       where: { fakultas_id: fakultasData.fakultas_id },
       limit: pageSize,
       offset: (page - 1) * pageSize
@@ -959,7 +958,7 @@ async function getAllDosen (req, res) {
     const page = parseInt(req.query.page, 10) || 1
     const pageSize = parseInt(req.query.pageSize, 10) || 10
 
-    const result = await dosens.findAndCountAll({
+    const result = await dosen.findAndCountAll({
       limit: pageSize,
       offset: (page - 1) * pageSize
     })
@@ -980,7 +979,7 @@ async function getAllDosen (req, res) {
 }
 
 async function updateUserMahasiswa (req, res) {
-  const { user_id } = req.user // Mengambil user_id dari JWT
+  const { user_id } = req.users // Mengambil user_id dari JWT
 
   const {
     username,
@@ -1033,17 +1032,17 @@ async function updateUserMahasiswa (req, res) {
     // Start a transaction
     const t = await sequelize.transaction()
 
-    // Find the existing user by user_id
-    const existingUser = await user.findOne({
+    // Find the existing users by user_id
+    const existingUser = await users.findOne({
       where: { user_id },
       transaction: t
     })
     if (!existingUser) {
-      await t.rollback() // Rollback transaction if user not found
-      return res.status(404).json({ error: 'User not found' })
+      await t.rollback() // Rollback transaction if users not found
+      return res.status(404).json({ error: 'users not found' })
     }
 
-    // Update the user data
+    // Update the users data
     const updatedUser = await existingUser.update(
       {
         username,
@@ -1056,7 +1055,7 @@ async function updateUserMahasiswa (req, res) {
     )
 
     // Find the associated mahasiswa data by user_id
-    const existingMahasiswa = await mahasiswas.findOne({
+    const existingMahasiswa = await mahasiswa.findOne({
       where: { user_id },
       transaction: t
     })
@@ -1112,7 +1111,7 @@ async function updateUserDosen (req, res) {
   } = req.body
 
   try {
-    const dosen = await dosens.findByPk(id)
+    const dosen = await dosen.findByPk(id)
     if (!dosen) {
       return res.status(404).json({ error: 'Dosen not found' })
     }
@@ -1145,7 +1144,7 @@ async function updateUserProdi (req, res) {
   const { nama_prodi, kode, fakultas_id } = req.body
 
   try {
-    const prodi = await prodis.findByPk(id)
+    const prodi = await prodi.findByPk(id)
     if (!prodi) {
       return res.status(404).json({ error: 'Prodi not found' })
     }
@@ -1191,7 +1190,7 @@ async function updateUserFakultas (req, res) {
   }
 }
 
-paginate.paginate(user)
+paginate.paginate(users)
 
 module.exports = {
   signUp,

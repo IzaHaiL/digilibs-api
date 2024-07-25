@@ -6,12 +6,27 @@ module.exports = (sequelize, DataTypes) => {
   class FinalProjects extends Model {
     static associate(models) {
       // Define associations here
-      FinalProjects.belongsTo(models.user, { foreignKey: 'user_id' });
-      FinalProjects.belongsTo(models.mahasiswas, { foreignKey: 'mahasiswa_id' });
+      FinalProjects.belongsTo(models.users, { foreignKey: 'user_id' });
+      FinalProjects.belongsTo(models.mahasiswa, { foreignKey: 'mahasiswa_id' });
       FinalProjects.belongsTo(models.fakultas, { foreignKey: 'fakultas_id' });
-      FinalProjects.belongsTo(models.prodis, { foreignKey: 'prodi_id' });
+      FinalProjects.belongsTo(models.prodi, { foreignKey: 'prodi_id' });
+      FinalProjects.hasMany(models.berkas, { foreignKey: 'project_id', as: 'berkas' });
+      FinalProjects.belongsToMany(models.kategori, {
+        through: 'kategorifinalprojects',
+        foreignKey: 'project_id',
+        as: 'kategori',
+        otherKey: 'kategori_id',
+      });
+      FinalProjects.belongsToMany(models.dosen, {
+        through: 'dosenfinalprojects',
+        as: 'kontributor',
+        foreignKey: 'project_id',
+        otherKey: 'dosen_id',
+      });
     }
   }
+
+  
   
   FinalProjects.init(
     {
@@ -21,48 +36,28 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: () => nanoid(20),
         allowNull: false,
       },
-      user_id: {
-        type: DataTypes.STRING(20),
-        allowNull: true,
-      },
-      mahasiswa_id: {
-        type: DataTypes.STRING(20),
-        allowNull: true,
-      },
       title: {
         type: DataTypes.STRING(255),
-        allowNull: true,
+        allowNull: false,
       },
       title_eng: {
         type: DataTypes.STRING(255),
         allowNull: false,
       },
       abstract: {
-        type: DataTypes.STRING(500),
+        type: DataTypes.STRING(2000),
         allowNull: false,
       },
       abstract_eng: {
-        type: DataTypes.STRING(500),
+        type: DataTypes.STRING(2000),
         allowNull: false,
-      },
-      kategori: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-      },
-      kontributor: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
       },
       catatan: {
         type: DataTypes.STRING(500),
         allowNull: true,
       },
       url_finalprojects: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-      },
-      berkas_finalprojects: {
-        type: DataTypes.STRING(100),
+        type: DataTypes.STRING(500),
         allowNull: true,
       },
       submissionDate: {
@@ -84,11 +79,19 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 0,
       },
-      fakultas_id: {
-        type: DataTypes.STRING(50),
+      user_id: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+      mahasiswa_id: {
+        type: DataTypes.STRING(20),
         allowNull: true,
       },
       prodi_id: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+      fakultas_id: {
         type: DataTypes.STRING(50),
         allowNull: true,
       },

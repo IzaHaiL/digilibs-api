@@ -1,7 +1,7 @@
 /* eslint-disable radix */
 /* eslint-disable consistent-return */
 const jwt = require("jsonwebtoken");
-const { user, donation } = require("../databases/models");
+const { users, donation } = require("../databases/models");
 const dotenv = require("dotenv");
 
 dotenv.config();
@@ -12,13 +12,13 @@ const authData = {
 };
 
 // Function to generate access token
-function generateAccessToken(user) {
+function generateAccessToken(users) {
   return jwt.sign(
     {
-      user_id: user.user_id, // corrected to user.user_id
-      username: user.username,
-      email: user.email,
-      role: user.role,
+      user_id: users.user_id, // corrected to users.user_id
+      username: users.username,
+      email: users.email,
+      role: users.role,
     },
     process.env.JWT_SECRET,
     {
@@ -28,13 +28,13 @@ function generateAccessToken(user) {
 }
 
 // Function to generate refresh token
-function generateRefreshToken(user) {
+function generateRefreshToken(users) {
   return jwt.sign(
     {
-      user_id: user.user_id, // corrected to user.user_id
-      username: user.username,
-      email: user.email,
-      role: user.role,
+      user_id: users.user_id, // corrected to users.user_id
+      username: users.username,
+      email: users.email,
+      role: users.role,
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
@@ -54,18 +54,18 @@ function authenticateToken(req, res, next) {
       .json({ error: "Unauthorized: Access token not provided" });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, users) => {
     if (err) {
       return res.status(403).json({ error: "Forbidden: Invalid access token" });
     }
 
-    if (user.isDeleted) {
+    if (users.isDeleted) {
       return res
         .status(403)
-        .json({ error: "Forbidden: User account has been deleted" });
+        .json({ error: "Forbidden: users account has been deleted" });
     }
 
-    req.user = user;
+    req.users = users;
     next();
   });
 }
@@ -78,21 +78,21 @@ function authenticateRefreshToken(req, res, next) {
     return next();
   }
 
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, users) => {
     if (err) {
       return res
         .status(403)
         .json({ error: "Forbidden: Invalid refresh token" });
     }
 
-    req.user = user;
+    req.users = users;
     next();
   });
 }
 
-// Middleware to check if the user is an admin
+// Middleware to check if the users is an admin
 function isAdmin(req, res, next) {
-  if (req.user && req.user.role === "admin") {
+  if (req.users && req.users.role === "admin") {
     next();
   } else {
     res
@@ -101,9 +101,9 @@ function isAdmin(req, res, next) {
   }
 }
 
-// Middleware to check if the user is a mahasiswa
+// Middleware to check if the users is a mahasiswa
 function isMahasiswa(req, res, next) {
-  if (req.user && req.user.role === "mahasiswa") {
+  if (req.users && req.users.role === "mahasiswa") {
     next();
   } else {
     res
@@ -112,9 +112,9 @@ function isMahasiswa(req, res, next) {
   }
 }
 
-// Middleware to check if the user is a fakultas
+// Middleware to check if the users is a fakultas
 function isFakultas(req, res, next) {
-  if (req.user && req.user.role === "fakultas") {
+  if (req.users && req.users.role === "fakultas") {
     next();
   } else {
     res
@@ -123,10 +123,10 @@ function isFakultas(req, res, next) {
   }
 }
 
-// Middleware to check if the user is a prodi
+// Middleware to check if the users is a prodi
 function isProdi(req, res, next) {
   // corrected function name
-  if (req.user && req.user.role === "prodi") {
+  if (req.users && req.users.role === "prodi") {
     next();
   } else {
     res
@@ -135,9 +135,9 @@ function isProdi(req, res, next) {
   }
 }
 
-// Middleware to check if the user is an lppm
+// Middleware to check if the users is an lppm
 function isLppm(req, res, next) {
-  if (req.user && req.user.role === "lppm") {
+  if (req.users && req.users.role === "lppm") {
     next();
   } else {
     res
@@ -146,9 +146,9 @@ function isLppm(req, res, next) {
   }
 }
 
-// Middleware to check if the user is a dosen
+// Middleware to check if the users is a dosen
 function isDosen(req, res, next) {
-  if (req.user && req.user.role === "dosen") {
+  if (req.users && req.users.role === "dosen") {
     next();
   } else {
     res
@@ -157,11 +157,11 @@ function isDosen(req, res, next) {
   }
 }
 
-// Middleware to check if the user is the owner of the requested resource or an admin
+// Middleware to check if the users is the owner of the requested resource or an admin
 async function isUserOwner(modelName, idColumn, req, res, next) {
   try {
     const entityId = req.params[idColumn];
-    const authenticatedUserId = req.user.user_id;
+    const authenticatedUserId = req.users.user_id;
 
     // Ambil model berdasarkan nama model yang diberikan
     const Model = require(`../models/${modelName}`); // Pastikan model Anda terdapat di folder models
@@ -178,7 +178,7 @@ async function isUserOwner(modelName, idColumn, req, res, next) {
     const requestedUserId = entity.user_id;
 
     // Periksa izin
-    if (req.user.role === "admin" || requestedUserId === authenticatedUserId) {
+    if (req.users.role === "admin" || requestedUserId === authenticatedUserId) {
       next();
     } else {
       res.status(403).json({
@@ -194,9 +194,9 @@ async function isUserOwner(modelName, idColumn, req, res, next) {
 }
 
 function isUserOwnerNoRequest(req, res, next) {
-  const authenticatedUserId = req.user.user_id;
-  console.log("Authenticated User ID:", authenticatedUserId);
-  if (req.user.role === "admin" || authenticatedUserId) {
+  const authenticatedUserId = req.users.user_id;
+  console.log("Authenticated users ID:", authenticatedUserId);
+  if (req.users.role === "admin" || authenticatedUserId) {
     next();
   } else {
     res.status(403).json({
@@ -207,7 +207,7 @@ function isUserOwnerNoRequest(req, res, next) {
 
 async function isDonationOwner(req, res, next) {
   const requestedDonationId = req.params.id;
-  const authenticatedUserId = req.user.user_id;
+  const authenticatedUserId = req.users.user_id;
 
   try {
     const donationObj = await donation.findByPk(requestedDonationId);
@@ -218,9 +218,9 @@ async function isDonationOwner(req, res, next) {
       });
     }
 
-    // Check if the authenticated user is the owner of the donation or an admin
+    // Check if the authenticated users is the owner of the donation or an admin
     if (
-      req.user.role === "admin" ||
+      req.users.role === "admin" ||
       donationObj.idUser === authenticatedUserId
     ) {
       req.donationObj = donationObj; // Attach the donation object to the request for later use
@@ -238,10 +238,10 @@ async function isDonationOwner(req, res, next) {
   }
 }
 
-// Middleware to check if the user is deleted
+// Middleware to check if the users is deleted
 async function isUserDeleted(userId) {
   try {
-    const foundUser = await user.findByPk(userId);
+    const foundUser = await users.findByPk(userId);
 
     if (!foundUser) {
       return true;
@@ -249,7 +249,7 @@ async function isUserDeleted(userId) {
 
     return foundUser.isDeleted;
   } catch (error) {
-    console.error("Error checking user deletion status:", error);
+    console.error("Error checking users deletion status:", error);
     return true;
   }
 }
@@ -262,15 +262,15 @@ async function checkUserDeletedBeforeLogin(req, res, next) {
         .status(400)
         .json({ error: "Bad Request: Username is required" });
     }
-    const foundUser = await user.findOne({ where: { username } });
+    const foundUser = await users.findOne({ where: { username } });
     if (!foundUser) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "users not found" });
     }
     const userDeleted = await isUserDeleted(foundUser.user_id); // corrected to foundUser.user_id
     if (userDeleted) {
       return res
         .status(403)
-        .json({ error: "Forbidden: User account has been deleted" });
+        .json({ error: "Forbidden: users account has been deleted" });
     }
     next();
   } catch (error) {

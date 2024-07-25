@@ -5,9 +5,9 @@ const { nanoid } = require("nanoid");
 module.exports = (sequelize, DataTypes) => {
   class Mahasiswa extends Model {
     static associate(models) {
-      Mahasiswa.belongsTo(models.user, { foreignKey: 'user_id' });
+      Mahasiswa.belongsTo(models.users, { foreignKey: 'user_id' });
       Mahasiswa.belongsTo(models.fakultas, { foreignKey: 'fakultas_id' });
-      Mahasiswa.belongsTo(models.prodis, { foreignKey: 'prodi_id' });
+      Mahasiswa.belongsTo(models.prodi, { foreignKey: 'prodi_id' });
       Mahasiswa.hasMany(models.finalprojects, { foreignKey: 'mahasiswa_id' });
     }
   }
@@ -18,11 +18,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(20),
         primaryKey: true,
         defaultValue: () => nanoid(20),
-        allowNull: false,
-        unique: true,
-      },
-      user_id: {
-        type: DataTypes.STRING(20),
         allowNull: false,
         unique: true,
       },
@@ -63,11 +58,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(20),
         allowNull: true,
       },
-      fakultas_id: {
+      user_id: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        unique: true,
+      },
+      prodi_id: {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
-      prodi_id: {
+      fakultas_id: {
         type: DataTypes.STRING(50),
         allowNull: false,
       },
@@ -84,7 +84,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: "mahasiswas",
+      modelName: "mahasiswa",
     }
   );
 

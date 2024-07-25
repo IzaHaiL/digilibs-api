@@ -5,7 +5,13 @@
     "database": "digilibs_db",
     "host": "db-mysql-sgp1-85622-do-user-14434596-0.i.db.ondigitalocean.com",
     "port": "25060",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "define": 
+    { 
+      "freezeTableName": true
+
+    }
+
   },
   "test": {
     "username": "root",
@@ -20,6 +26,12 @@
     "database": "digilibs_db",
     "host": "db-mysql-sgp1-85622-do-user-14434596-0.i.db.ondigitalocean.com",
     "port": "25060",
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "define": 
+    { 
+      "freezeTableName": true
+
+    }
+    
   }
 }

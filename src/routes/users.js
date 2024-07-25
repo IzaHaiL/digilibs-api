@@ -111,7 +111,7 @@ router.get(
   isAdmin,
   userController.getAllMahasiswa
 )
-router.get('/AllDosen', authenticateToken, isAdmin, userController.getAllDosen)
+router.get('/AllDosen', authenticateToken, userController.getAllDosen)
 router.get(
   '/AllMahasiswaByProdi/:nama_prodi',
   authenticateToken,

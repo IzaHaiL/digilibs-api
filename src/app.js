@@ -9,6 +9,7 @@ var usersRouter = require('./routes/users');
 var researchsRouter = require('./routes/researchs');
 var finalProjectsRouter = require('./routes/finalprojects');
 var consineRouter = require('./routes/consineSim');
+var adminRouter = require('./routes/admins');
 
 const cors = require('cors');
 
@@ -31,6 +32,7 @@ app.use('/users', usersRouter);
 app.use('/researchs', researchsRouter);
 app.use('/finalprojects', finalProjectsRouter);
 app.use('/consine', consineRouter);
+app.use('/admins', adminRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

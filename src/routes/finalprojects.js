@@ -12,16 +12,19 @@ const {
   isUserOwner,
   isMahasiswa
 } = require('../middlewares/auth')
+const {upload} = require('../middlewares/multer');
+
 
 // private
-
 router.post(
   '/private/create',
   authenticateToken,
-  checkBlacklist,
   isMahasiswa,
+  upload.array('files', 10), // Accept up to 10 files with 'files' as the field name
   finalProjectController.createFinalProjects
-)
+  
+);
+
 
 router.get('/private/', finalProjectController.getAllFinalProjects)
 
@@ -51,6 +54,7 @@ router.put(
   '/private/update/:project_id',
   authenticateToken,
   isMahasiswa,
+  upload.array('files', 10), // Accept up to 10 files
   finalProjectController.updateFinalProjects
 )
 

@@ -2,16 +2,11 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('mahasiswas', {
+    await queryInterface.createTable('mahasiswa', {
       mahasiswa_id: {
         allowNull: false,
         primaryKey: true,
         type: Sequelize.STRING(20),
-        unique: true,
-      },
-      user_id: {
-        type: Sequelize.STRING(20),
-        allowNull: false,
         unique: true,
       },
       nama_mahasiswa: {
@@ -51,11 +46,16 @@ module.exports = {
         type: Sequelize.STRING(20),
         allowNull: true,
       },
-      fakultas_id: {
+      user_id: {
+        type: Sequelize.STRING(20),
+        allowNull: false,
+        unique: true,
+      },
+      prodi_id: {
         type: Sequelize.STRING(50),
         allowNull: false,
       },
-      prodi_id: {
+      fakultas_id: {
         type: Sequelize.STRING(50),
         allowNull: false,
       },
@@ -72,7 +72,7 @@ module.exports = {
     });
 
     // Add foreign key constraints
-    await queryInterface.addConstraint('mahasiswas', {
+    await queryInterface.addConstraint('mahasiswa', {
       fields: ['user_id'],
       type: 'foreign key',
       name: 'fk_mahasiswas_user_id',
@@ -84,7 +84,7 @@ module.exports = {
       onUpdate: 'cascade',
     });
 
-    await queryInterface.addConstraint('mahasiswas', {
+    await queryInterface.addConstraint('mahasiswa', {
       fields: ['fakultas_id'],
       type: 'foreign key',
       name: 'fk_mahasiswas_fakultas_id',
@@ -96,12 +96,12 @@ module.exports = {
       onUpdate: 'cascade',
     });
 
-    await queryInterface.addConstraint('mahasiswas', {
+    await queryInterface.addConstraint('mahasiswa', {
       fields: ['prodi_id'],
       type: 'foreign key',
       name: 'fk_mahasiswas_prodi_id',
       references: {
-        table: 'prodis',
+        table: 'prodi',
         field: 'prodi_id',
       },
       onDelete: 'restrict',
@@ -110,6 +110,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('mahasiswas');
+    await queryInterface.dropTable('mahasiswa');
   }
 };
