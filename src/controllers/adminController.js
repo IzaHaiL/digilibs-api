@@ -206,7 +206,10 @@ async function generateDosenAccounts(req, res, next) {
 
     res.status(201).json({
       message: 'Dosen Account Generated Successfully',
-      data: Dosen
+      data: {
+        ...Dosen.toJSON(),
+        username: dosenUsername
+      }
     });
   } catch (err) {
     console.error(err);
@@ -254,7 +257,10 @@ async function generateMahasiswaAccounts(req, res, next) {
 
     res.status(201).json({
       message: 'Mahasiswa Account Generated Successfully',
-      data: Mahasiswa
+      data: {
+        ...Mahasiswa.toJSON(),
+        username: mahasiswaUsername
+      }
     });
   } catch (err) {
     console.error(err);
